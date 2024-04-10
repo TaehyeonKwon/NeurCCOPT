@@ -186,9 +186,4 @@ for iteration in 1:iterations
     else
         println("Iteration $iteration: Feasible solution found, x* = $x_star_jump. No retraining required.")
     end
-    
-    # else
-    #     println("Model validation failed.")
-    #     break
-    # end 
 end
