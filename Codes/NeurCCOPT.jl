@@ -12,7 +12,6 @@ using LinearAlgebra
 d = 5  # Degrees of freedom for ξ_i
 alpha = 0.05  # Confidence level
 m = 10^4  # Number of scenarios
-beta = (1 - alpha)^(1/m)
 lower_bound = 0.0
 upper_bound = 10.0
 num_samples_x = 100  # N
@@ -118,7 +117,7 @@ function train_NN(train_dataset)
             Flux.train!(loss, params, [batch], optimizer)
         end
         current_loss = mean([loss(first(batch), last(batch)) for batch in train_dataset])
-        # @info "Epoch: $epoch , Loss:  $current_loss"
+        @info "Epoch: $epoch , Loss:  $current_loss"
     end 
     return model
 end
@@ -147,7 +146,6 @@ function solve_norm_opt_probelm(lower_bound, upper_bound, alpha,trained_nn)
     function f(x::Vector)
         x_val = copy(x)
         for i in 1:length(trained_nn)
-            # x_val = sigmoid.(trained_nn[i].weight * x_val .+ trained_nn[i].bias)
             x_val = (trained_nn[i].weight * x_val .+ trained_nn[i].bias)
         end
         return x_val[1]
