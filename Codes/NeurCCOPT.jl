@@ -9,34 +9,31 @@ using LinearAlgebra
 
 
 # Parameters
-d = 5  # Degrees of freedom for ξ_i
+d = 10  # Degrees of freedom for ξ_i
 alpha = 0.05  # Confidence level
 m = 10^4  # Number of scenarios
+beta = (1 - alpha)^(1/m)
 lower_bound = 0.0
 upper_bound = 10.0
-num_samples_x = 100  # N
+num_samples_x = 1000  # N
 info = m
 epsilon = 10^(-4)
 
 
 # NN model
-batch_size = 5
+batch_size = 10
 epochs = 30
 learning_rate = 0.001
 
 # Framework Parameter
-iterations = 100
+iterations = 10
 K = 10  # alternating sample size
-theta = 0.9 # convexity parameter
+theta = 0.2 # convexity parameter
+
 
 
 function sample_x(lower_bound, upper_bound, num_samples_x)
-    X = []
-    for _ in 1:num_samples_x
-        x = rand(Uniform(lower_bound, upper_bound), d)
-        push!(X, x)
-    end
-    return X
+    return [rand(Uniform(lower_bound, upper_bound), d) for _ in 1:num_samples_x]
 end 
 
 
@@ -48,41 +45,29 @@ end
 
 
 function cc_g(x, xi)
-    constraint_value = 100
-    xi_squared = xi.^2  
-    x_squared = x.^2  
-    expression_value = dot(x_squared, xi_squared) - constraint_value
-    return expression_value
+    constraint_value = 100 
+    return dot(x.^2, xi.^2) - constraint_value
 end
 
 
 
-function log_SAA(x, info)
-    sampled_xi = global_xi(info)
-    count = 0
-    for i in 1:m
-        value_g = cc_g(x, sampled_xi[:,i])
-        if value_g > epsilon
-            count +=1
-        end
-    end
-    return log(count/m)
+function log_SAA(x, num_scenarios)
+    sampled_xi = global_xi(num_scenarios)
+    count = sum(cc_g(x, sampled_xi[:,i]) > epsilon for i in 1:num_scenarios)   # ? 
+    return log(count / num_scenarios)
 end
 
-function create_dataset(lower_bound, upper_bound, num_samples_x)
-    X = []
-    Y = []
-    x_values = sample_x(lower_bound, upper_bound, num_samples_x)
-    for x in x_values
-        probability = log_SAA(x, info)
-        push!(X, x)
-        push!(Y, probability)
-    end
+
+
+function create_dataset(lower_bound, upper_bound, num_samples_x, info)
+    X = sample_x(lower_bound, upper_bound, num_samples_x)
+    Y = [log_SAA(x, info) for x in X]
     return X, Y
 end
 
 
-X, Y = create_dataset(lower_bound, upper_bound, num_samples_x)
+
+X, Y = create_dataset(lower_bound, upper_bound, num_samples_x, info)
 println("Dataset generated.")
 
 train_set_end = floor(Int, length(X)*0.8)
@@ -99,16 +84,8 @@ Y_test = hcat(Y_test...)
 train_dataset = DataLoader((hcat(X_train...), hcat(Y_train...)), batchsize=batch_size, shuffle=false)
 
 
-function NeuralNetwork()
-    return Chain(
-            Dense(d, 3, sigmoid),
-            Dense(3, 1)
-            )
-end
-
-
 function train_NN(train_dataset)
-    model = NeuralNetwork()
+    model = Chain(Dense(d, 3, sigmoid), Dense(3, 1))
     optimizer = ADAM(learning_rate)
     loss(x,y) = Flux.Losses.mse(model(x),y)
     params = Flux.params(model)  
@@ -117,11 +94,10 @@ function train_NN(train_dataset)
             Flux.train!(loss, params, [batch], optimizer)
         end
         current_loss = mean([loss(first(batch), last(batch)) for batch in train_dataset])
-        @info "Epoch: $epoch , Loss:  $current_loss"
+        # @info "Epoch: $epoch , Loss:  $current_loss"
     end 
     return model
 end
-
 
 
 function model_output_function_jl(x::Vector{Float64}, model)
@@ -163,25 +139,32 @@ function solve_norm_opt_probelm(lower_bound, upper_bound, alpha,trained_nn)
 end
 
 nn_model = train_NN(train_dataset)
+println("Initial model training completed!")
 
-for iteration in 1:iterations 
-    model = nn_model
-    @assert model_validation(model)
-    #if is_valid
-    x_star_jump = solve_norm_opt_probelm(lower_bound, upper_bound, alpha,model)
-    feasi_probability = log_SAA(x_star_jump, info)
-    if feasi_probability > log(alpha)
-        println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
-        for k in 1:K
-            bar_x = rand(Uniform(lower_bound, upper_bound), d)
-            x_k = theta*x_star_jump + (1-theta)*bar_x
-            push!(X_train, x_star_jump)
-            push!(Y_train, log_SAA(x_k,info))
+
+function iterative_retraining(iterations, K, theta, model)
+    for iteration in 1:iterations 
+        @assert model_validation(model)
+        x_star_jump = solve_norm_opt_probelm(lower_bound, upper_bound, alpha,model)
+        feasi_probability = log_SAA(x_star_jump, info)
+        if feasi_probability > log(alpha)
+            println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
+            for k in 1:K
+                bar_x = rand(Uniform(lower_bound, upper_bound), d)
+                x_k = theta*x_star_jump + (1-theta)*bar_x
+                push!(X_train, x_star_jump)
+                push!(Y_train, log_SAA(x_k,info))
+            end
+            X_train_updated, Y_train_updated = hcat(X_train...), hcat(Y_train...)
+            train_dataset = DataLoader((X_train_updated, Y_train_updated), batchsize=batch_size, shuffle=true)
+            model = train_NN(train_dataset)
+        else
+            println("Iteration $iteration: Feasible solution found, x* = $x_star_jump. No retraining required.")
         end
-        X_train_updated, Y_train_updated = hcat(X_train...), hcat(Y_train...)
-        train_dataset = DataLoader((X_train_updated, Y_train_updated), batchsize=batch_size, shuffle=true)
-        model = train_NN(train_dataset)
-    else
-        println("Iteration $iteration: Feasible solution found, x* = $x_star_jump. No retraining required.")
     end
+    return model
 end
+
+# Begin the iterative retraining process
+retraining_nn_model = iterative_retraining(iterations, K, theta, nn_model)
+println("Model retraining completed.")
