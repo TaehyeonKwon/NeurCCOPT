@@ -7,9 +7,10 @@ using Plots
 using Statistics, Random
 using LinearAlgebra
 
+Random.seed!(123)
 
 # Parameters
-d = 10  # Degrees of freedom for ξ_i
+d = 5  # Degrees of freedom for ξ_i
 alpha = 0.05  # Confidence level
 m = 10^4  # Number of scenarios
 beta = (1 - alpha)^(1/m)
@@ -26,9 +27,9 @@ epochs = 30
 learning_rate = 0.001
 
 # Framework Parameter
-iterations = 10
-K = 10  # alternating sample size
-theta = 0.2 # convexity parameter
+iterations = 100
+K = 30  # alternating sample size
+theta = 0.9 # convexity parameter
 
 
 
@@ -51,17 +52,17 @@ end
 
 
 
-function log_SAA(x, num_scenarios)
+function log_prob(x, num_scenarios)
     sampled_xi = global_xi(num_scenarios)
-    count = sum(cc_g(x, sampled_xi[:,i]) > epsilon for i in 1:num_scenarios)   # ? 
-    return log(count / num_scenarios)
+    count = sum(cc_g(x, sampled_xi[:,i]) > epsilon for i in 1:num_scenarios)   # ?
+    return log10(count / num_scenarios)
 end
 
 
 
 function create_dataset(lower_bound, upper_bound, num_samples_x, info)
     X = sample_x(lower_bound, upper_bound, num_samples_x)
-    Y = [log_SAA(x, info) for x in X]
+    Y = [log_prob(x, info) for x in X]
     return X, Y
 end
 
@@ -70,11 +71,10 @@ end
 X, Y = create_dataset(lower_bound, upper_bound, num_samples_x, info)
 println("Dataset generated.")
 
-train_set_end = floor(Int, length(X)*0.8)
-test_set_start = train_set_end+1
+train_set_end = floor(Int, length(X) * 0.8)
 
-X_train, X_test = X[1:train_set_end], X[test_set_start:end]
-Y_train, Y_test = Y[1:train_set_end], Y[test_set_start:end]
+X_train, X_test = X[1:train_set_end], X[train_set_end+1:end]
+Y_train, Y_test = Y[1:train_set_end], Y[train_set_end+1:end]
 
 X_train = vec(X_train)
 Y_train = vec(Y_train)
@@ -93,7 +93,7 @@ function train_NN(train_dataset)
         for batch in train_dataset
             Flux.train!(loss, params, [batch], optimizer)
         end
-        current_loss = mean([loss(first(batch), last(batch)) for batch in train_dataset])
+        # current_loss = mean([loss(first(batch), last(batch)) for batch in train_dataset])
         # @info "Epoch: $epoch , Loss:  $current_loss"
     end 
     return model
@@ -132,7 +132,7 @@ function solve_norm_opt_probelm(lower_bound, upper_bound, alpha,trained_nn)
         @constraint(opt_model, x[i] <= upper_bound)
     end
     @operator(opt_model, new_const, d, (x...) -> f(collect(x)))
-    @constraint(opt_model, new_const(x...) <= log(alpha))
+    @constraint(opt_model, new_const(x...) <= log10(alpha))
     @objective(opt_model, Min, -sum(x))
     optimize!(opt_model)
     return value.(x)
@@ -146,14 +146,14 @@ function iterative_retraining(iterations, K, theta, model)
     for iteration in 1:iterations 
         @assert model_validation(model)
         x_star_jump = solve_norm_opt_probelm(lower_bound, upper_bound, alpha,model)
-        feasi_probability = log_SAA(x_star_jump, info)
-        if feasi_probability > log(alpha)
+        feasi_probability = log_prob(x_star_jump, info)
+        if feasi_probability > log10(alpha)
             println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
             for k in 1:K
                 bar_x = rand(Uniform(lower_bound, upper_bound), d)
                 x_k = theta*x_star_jump + (1-theta)*bar_x
                 push!(X_train, x_star_jump)
-                push!(Y_train, log_SAA(x_k,info))
+                push!(Y_train, log_prob(x_k,info))
             end
             X_train_updated, Y_train_updated = hcat(X_train...), hcat(Y_train...)
             train_dataset = DataLoader((X_train_updated, Y_train_updated), batchsize=batch_size, shuffle=true)
