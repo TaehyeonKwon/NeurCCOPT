@@ -7,30 +7,36 @@ using Plots
 using Statistics, Random
 using LinearAlgebra
 
-Random.seed!(123)
 
-# Parameters
+# 1. Given_Parameters
 d = 5  # Degrees of freedom for ξ_i
 alpha = 0.05  # Confidence level
-m = 10^4  # Number of scenarios
+m = 10^2 # number of constraint inside probability
 beta = (1 - alpha)^(1/m)
-lower_bound = 0.0
-upper_bound = 10.0
-num_samples_x = 1000  # N
-info = m
-epsilon = 10^(-4)
+lower_bound = 0.0 # lower bound for x
+upper_bound = 10.0 # upper bound for x
+case_type = 0 # case type; 0: independent, 1: dependent
+
+if case_type == 0
+    quantile_value = Distributions.quantile(Chisq(d), beta)
+else
+    quantile_value = Distributions.quantile(Chisq(d), 1-alpha)
+end
 
 
-# NN model
-batch_size = 10
+# 2. hyperparameters
+N = 10^3 # number of scenario
+num_samples_x = 100 # initial generated number of x
+epsilon = 5000 # threshold for embedded nn constraint
+seed = 1 # random seed for data generation
+## 2.1 NN model
+batch_size = 5
 epochs = 30
 learning_rate = 0.001
-
-# Framework Parameter
-iterations = 100
+## 2.2 Framework Parameter
+iterations = 1000
 K = 30  # alternating sample size
 theta = 0.9 # convexity parameter
-
 
 
 function sample_x(lower_bound, upper_bound, num_samples_x)
@@ -38,37 +44,51 @@ function sample_x(lower_bound, upper_bound, num_samples_x)
 end 
 
 
-function global_xi(info) 
-    m = info
-    xi_vector = rand(Normal(0,1), d, m)
-    return xi_vector
-end 
-
-
-function cc_g(x, xi)
-    constraint_value = 100 
-    return dot(x.^2, xi.^2) - constraint_value
+function generate_sample(seed)
+    Random.seed!(seed)
+    if case_type == 0
+        xi_vector = rand(Normal(0,1), d, m)
+        return xi_vector
+    else 
+        means = [j / d for j in 1:d]  # Means depend linearly on j, scaled by d
+        cov_matrix = fill(0.05, d, d)  # Initialize covariance matrix with 0.05 for all elements
+        # Use diagind to access and set diagonal elements to 1 (variance of each variable)
+        diag_indices = diagind(cov_matrix)
+        cov_matrix[diag_indices] .= 1.0
+        # Generate m samples of a d-dimensional multivariate normal distribution
+        xi_matrix = rand(MvNormal(means, cov_matrix), m)  # m columns each of dimension d
+        return xi_matrix  # Returning a d x m matrix where each column is one sample
+    end
 end
 
 
-
-function log_prob(x, num_scenarios)
-    sampled_xi = global_xi(num_scenarios)
-    count = sum(cc_g(x, sampled_xi[:,i]) > epsilon for i in 1:num_scenarios)   # ?
-    return log10(count / num_scenarios)
+function cc_g(x, sampled_xi)
+    constraint_value = 100
+    return_value = maximum((dot(x.^2, sampled_xi[:,i].^2) - constraint_value) for i in 1:size(sampled_xi, 2))
+    return return_value
 end
 
 
+function quantile(x, seed)
+    results = Float64[] 
+    for i in 1:N
+        sample_xi = generate_sample(seed + i)
+        push!(results, cc_g(x, sample_xi))
+    end
+    sorted_results = sort(results)
+    index = ceil(Int, alpha * N)
+    return sorted_results[index]
+end
 
-function create_dataset(lower_bound, upper_bound, num_samples_x, info)
+
+function create_dataset(lower_bound, upper_bound, num_samples_x, seed)
     X = sample_x(lower_bound, upper_bound, num_samples_x)
-    Y = [log_prob(x, info) for x in X]
+    Y = [quantile(x,seed) for x in X]
     return X, Y
 end
 
 
-
-X, Y = create_dataset(lower_bound, upper_bound, num_samples_x, info)
+X, Y = create_dataset(lower_bound, upper_bound, num_samples_x, seed)
 println("Dataset generated.")
 
 train_set_end = floor(Int, length(X) * 0.8)
@@ -85,6 +105,7 @@ train_dataset = DataLoader((hcat(X_train...), hcat(Y_train...)), batchsize=batch
 
 
 function train_NN(train_dataset)
+    Random.seed!(123)
     model = Chain(Dense(d, 3, sigmoid), Dense(3, 1))
     optimizer = ADAM(learning_rate)
     loss(x,y) = Flux.Losses.mse(model(x),y)
@@ -116,27 +137,47 @@ function model_validation(model)
 end 
 
 
+# function solve_norm_opt_probelm(lower_bound, upper_bound, alpha,trained_nn)
+#     opt_model = Model(Ipopt.Optimizer)
+#     set_optimizer_attribute(opt_model, "print_level", 0)
+#     function f(x::Vector)
+#         x_val = copy(x)
+#         for i in 1:length(trained_nn)
+#             x_val = trained_nn[i].σ.(trained_nn[i].weight * x_val .+ trained_nn[i].bias)
+#         end
+#         return x_val[1]
+#     end   
+#     @variable(opt_model, lower_bound <= x[1:d] <= upper_bound)
+#     @objective(opt_model, Min, -sum(x))
+#     @operator(opt_model, new_const, d, (x...) -> f(collect(x)))
+#     @constraint(opt_model, new_const(x...) <= epsilon)
+#     optimize!(opt_model)
+#     return value.(x), objective_value(opt_model)
+# end
+
+
+#### binary search case ####
+
 function solve_norm_opt_probelm(lower_bound, upper_bound, alpha,trained_nn)
     opt_model = Model(Ipopt.Optimizer)
     set_optimizer_attribute(opt_model, "print_level", 0)
     function f(x::Vector)
         x_val = copy(x)
         for i in 1:length(trained_nn)
-            x_val = (trained_nn[i].weight * x_val .+ trained_nn[i].bias)
+            x_val = trained_nn[i].σ.(trained_nn[i].weight * x_val .+ trained_nn[i].bias)
         end
         return x_val[1]
-    end    
-    @variable(opt_model, x[1:d])
-    for i in 1:d
-        @constraint(opt_model, x[i] >= lower_bound)
-        @constraint(opt_model, x[i] <= upper_bound)
-    end
+    end   
+    @variable(opt_model, lower_bound <= x[1:d] <= upper_bound) 
+    @objective(opt_model, Min,0)
     @operator(opt_model, new_const, d, (x...) -> f(collect(x)))
-    @constraint(opt_model, new_const(x...) <= log10(alpha))
-    @objective(opt_model, Min, -sum(x))
+    @constraint(opt_model, new_const(x...) <= epsilon)
+    @constraint(opt_model, sum(x) >= (2*d))
     optimize!(opt_model)
-    return value.(x)
+    return value.(x), objective_value(opt_model)
 end
+
+
 
 nn_model = train_NN(train_dataset)
 println("Initial model training completed!")
@@ -145,21 +186,24 @@ println("Initial model training completed!")
 function iterative_retraining(iterations, K, theta, model)
     for iteration in 1:iterations 
         @assert model_validation(model)
-        x_star_jump = solve_norm_opt_probelm(lower_bound, upper_bound, alpha,model)
-        feasi_probability = log_prob(x_star_jump, info)
-        if feasi_probability > log10(alpha)
+        x_star_jump,optimal_value = solve_norm_opt_probelm(lower_bound, upper_bound, alpha,model)
+        feasi_quantile = quantile(x_star_jump, seed)
+        if feasi_quantile > 0
             println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
+            # println("Iteration $iteration: Infeasible solution found.")
             for k in 1:K
                 bar_x = rand(Uniform(lower_bound, upper_bound), d)
                 x_k = theta*x_star_jump + (1-theta)*bar_x
                 push!(X_train, x_star_jump)
-                push!(Y_train, log_prob(x_k,info))
+                push!(Y_train, quantile(x_k,seed))
             end
             X_train_updated, Y_train_updated = hcat(X_train...), hcat(Y_train...)
             train_dataset = DataLoader((X_train_updated, Y_train_updated), batchsize=batch_size, shuffle=true)
             model = train_NN(train_dataset)
         else
             println("Iteration $iteration: Feasible solution found, x* = $x_star_jump. No retraining required.")
+            # println("Optimal value: $(-optimal_value)")
+            break
         end
     end
     return model
@@ -167,4 +211,10 @@ end
 
 # Begin the iterative retraining process
 retraining_nn_model = iterative_retraining(iterations, K, theta, nn_model)
+if case_type == 0
+    quantile_value = Distributions.quantile(Chisq(d), beta)
+    x_star_closed_form = 10 / sqrt(quantile_value)
+    println("Closed Solution: $x_star_closed_form")
+    println("Closed Value: $(x_star_closed_form*d)")
+end
 println("Model retraining completed.")
