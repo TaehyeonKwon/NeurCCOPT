@@ -228,7 +228,7 @@ function iterative_retraining(iterations, K, theta, model)
         x_star_jump,optimal_value = solve_norm_opt_probelm(lower_bound, upper_bound, alpha,model)
         feasi_quantile = quantile(x_star_jump, seed)
         
-        plot_quantile_predictions(X_train, Y_train, model, iteration)
+        plot_quantile_predictions(X_test, Y_test, model, iteration)
         if feasi_quantile > 0
             println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
             for k in 1:K
