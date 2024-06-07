@@ -1,2 +1,2 @@
 # NeurCCOPT
-Codes for neural chance constrained optimization
+Neural Chance Constrained Optimization
