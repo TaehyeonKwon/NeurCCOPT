@@ -23,8 +23,8 @@ fixed_params = setup_parameters()
 param_ranges = Dict(
     :N => [10,100,1000],
     :num_samples_x => [30, 100, 500, 1000],
-    :epsilon => 0:10,
-    :K => [10, 30, 50]
+    :K => [10, 30, 50],
+    :theta => 0.1:0.1:0.9
 )
 
 

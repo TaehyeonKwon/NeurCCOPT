@@ -8,8 +8,8 @@ function setup_parameters()
     params = Dict()
     
     # Params for Problem
-    params[:d] = 5
-    params[:alpha] = 0.05
+    params[:d] = 10
+    params[:alpha] = 0.1
     params[:m] = 10
     params[:beta] = (1 - params[:alpha])^(1 / params[:m])
     params[:lower_bound] = 0.0
@@ -18,9 +18,9 @@ function setup_parameters()
     # params[:quantile_value] = params[:case_type] == 0 ? Distributions.quantile(Chisq(params[:d]), params[:beta]) : Distributions.quantile(Chisq(params[:d]), 1 - params[:alpha])
     
     # Params for Framework
-    params[:N] = 1000
+    params[:N] = 10000
     params[:num_samples_x] = 100
-    params[:epsilon] = 10
+    params[:epsilon] = 0
     params[:seed] = 1
     params[:iterations] = 1000
     params[:K] = 30
