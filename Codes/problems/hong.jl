@@ -31,38 +31,38 @@ function neurconst(x::Vector, trained_nn, Y_max, Y_min)
 end 
 
 
-# function NeuralModel(P, trained_nn, Y_max, Y_min)
-#     @unpack d,lb,ub,ϵ = P
-#     model = Model(Ipopt.Optimizer)
-#     set_silent(model)
-#     @variable(model, lb <= x[1:d] <= ub)
-#     @objective(model, Min, -sum(x))
-#     @operator(model, new_const, d, (x...) -> neurconst(collect(x), trained_nn, Y_max, Y_min))
-#     @constraint(model, new_const(x...) <= ϵ)
-#     optimize!(model)
-#     if !is_solved_and_feasible(model; allow_almost = true)
-#         @show termination_status(model)
-#         @warn("Unable to find a feasible and/or optimal solution of the embedded model")
-#     end
-#     return value.(x), objective_value(model)
-# end
-  
-
 function NeuralModel(P, trained_nn, params)
     # @unpack d,lb,ub,ϵ = P
     model = Model(Ipopt.Optimizer)
-    set_silent(model)   
-    @variable(model, params[:lower_bound] <= x[1:params[:d]] <= params[:upper_bound]) 
-    @objective(model, Min,0)
+    set_silent(model)
+    @variable(model, params[:lower_bound] <= x[1:params[:d]] <= params[:upper_bound])
+    @objective(model, Min, -sum(x))
     @operator(model, new_const, params[:d], (x...) -> neurconst(collect(x), trained_nn, params[:Y_max], params[:Y_min]))
-    @constraint(model, new_const(x...) <= (params[:epsilon]-params[:Y_min])/(params[:Y_max]-params[:Y_min]))
-    @constraint(model, sum(x) >= (1*params[:d]))
+    @constraint(model, new_const(x...) <= (params[:epsilon]-params[:Y_min])/(params[:Y_max]-params[:Y_min])))
     optimize!(model)
     if !is_solved_and_feasible(model; allow_almost = true)
-        @show(termination_status(model))
-        @warn("Unable to find a feasible and/or optimal solution of the embedded model")
+        # @show termination_status(model)
+        # @warn("Unable to find a feasible and/or optimal solution of the embedded model")
     end
     return value.(x), objective_value(model)
 end
+  
+
+# function NeuralModel(P, trained_nn, params)
+#     # @unpack d,lb,ub,ϵ = P
+#     model = Model(Ipopt.Optimizer)
+#     set_silent(model)   
+#     @variable(model, params[:lower_bound] <= x[1:params[:d]] <= params[:upper_bound]) 
+#     @objective(model, Min,0)
+#     @operator(model, new_const, params[:d], (x...) -> neurconst(collect(x), trained_nn, params[:Y_max], params[:Y_min]))
+#     @constraint(model, new_const(x...) <= (params[:epsilon]-params[:Y_min])/(params[:Y_max]-params[:Y_min]))
+#     @constraint(model, sum(x) >= (1*params[:d]))
+#     optimize!(model)
+#     if !is_solved_and_feasible(model; allow_almost = true)
+#        #  @show(termination_status(model))
+#        #  @warn("Unable to find a feasible and/or optimal solution of the embedded model")
+#     end
+#     return value.(x), objective_value(model)
+# end
 
 end

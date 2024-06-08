@@ -47,7 +47,7 @@ function train_NN(train_dataset, params)
 
         if epoch % 5 == 0 
             current_loss = mean([custom_loss(batch[1], batch[2], model) for batch in train_dataset])
-          # @info "Epoch: $epoch , Loss: $current_loss"
+           #  @info "Epoch: $epoch , Loss: $current_loss"
         end
     end
     # # loss(x, y) = Flux.Losses.mse(model(x), y)
@@ -73,8 +73,8 @@ end
 # function train_NN(train_dataset, params)
 #     Random.seed!(123)
 #     model = Chain(
-#         Dense(params[:d] + 1, 3, relu), 
-#         Dense(3, 1)                     
+#         Dense(params[:d] + 1, 3, relu),  # 입력 차원이 d + 1 (feasibility)
+#         Dense(3, 1)                     # 출력은 하나의 quantile 값
 #     )
 #     optimizer = ADAM(params[:learning_rate])
     
@@ -85,7 +85,9 @@ end
 #         quantile_pred = pred[:, 1]
         
 #         loss_quantile = Flux.Losses.mse(quantile_pred, y)
+#         # quantile_pred를 기반으로 feasibility를 판단
 #         pred_feasibility = cc_feasibility(quantile_pred)
+#         # 예측값이 feasible한 경우에 손실을 줄임
 #         feasible_penalty = sum((quantile_pred .- y) .* pred_feasibility) / length(pred_feasibility)
         
 #         return loss_quantile - feasible_penalty
@@ -95,7 +97,7 @@ end
 #     for epoch in 1:params[:epochs]
 #         for batch in train_dataset
 #             x, y, feas = batch
-#             feas = convert(Matrix{Float64}, feas)  
+#             feas = convert(Matrix{Float64}, feas)  # batch 내의 feas를 Float64로 변환
 #             gs = Flux.gradient(model_params) do
 #                 custom_loss(x, y, feas)
 #             end

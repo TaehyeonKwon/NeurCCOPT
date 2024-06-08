@@ -8,15 +8,22 @@ export iterative_retraining
 
 function iterative_retraining(P, model, X_train, Y_train, params)
     # feasibility_train = cc_feasibility(Y_train)  # feasibility_train 초기화
+	quantile_values = []
+	solutions = []
+        feasibility = []
     for iteration in 1:params[:iterations]
         @assert model_validation(model, params[:lower_bound], params[:upper_bound], params[:d])
         x_star_jump, optimal_value = NeuralModel(P, model, params)
-        println("x_star: ",x_star_jump)
+        # println("x_star: ",x_star_jump)
         feasi_quantile = quantile(x_star_jump, params[:seed], params[:N], params[:d], params[:m], params[:alpha], params[:case_type])
         # plot_quantile_predictions(X_train, Y_train, model, iteration)
-        println(feasi_quantile)
-        if feasi_quantile > 0
-            println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
+        # println(feasi_quantile)
+
+        push!(quantile_values, feasi_quantile)
+        push!(solutions, x_star_jump)
+        push!(feasibility, feasi_quantile <= 0)
+	if feasi_quantile > 0
+           #  println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
             for k in 1:params[:K]
                 bar_x = rand(Uniform(params[:lower_bound], params[:upper_bound]), params[:d])
                 x_k = params[:theta] * x_star_jump + (1 - params[:theta]) * bar_x
@@ -44,7 +51,7 @@ function iterative_retraining(P, model, X_train, Y_train, params)
             break
         end
     end
-    return model
+    return quantile_values, solutions, feasibility
 end
 
 end # module
