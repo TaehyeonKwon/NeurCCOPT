@@ -47,7 +47,7 @@ function train_NN(train_dataset, params)
 
         if epoch % 5 == 0 
             current_loss = mean([custom_loss(batch[1], batch[2], model) for batch in train_dataset])
-            @info "Epoch: $epoch , Loss: $current_loss"
+          # @info "Epoch: $epoch , Loss: $current_loss"
         end
     end
     # # loss(x, y) = Flux.Losses.mse(model(x), y)
