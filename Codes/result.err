@@ -1,7 +1,0 @@
-WARNING: replacing module DataGeneration.
-WARNING: replacing module ModelTraining.
-┌ Warning: Layer with Float32 parameters got Float64 input.
-│   The input will be converted, but any earlier layers may be very slow.
-│   layer = Dense(5 => 3)       # 18 parameters
-│   summary(x) = "5×16 Matrix{Float64}"
-└ @ Flux ~/.julia/packages/Flux/n3cOc/src/layers/stateless.jl:60

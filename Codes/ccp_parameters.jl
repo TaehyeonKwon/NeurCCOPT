@@ -14,7 +14,7 @@ function setup_parameters()
     params[:beta] = (1 - params[:alpha])^(1 / params[:m])
     params[:lower_bound] = 0.0
     params[:upper_bound] = 10.0
-    params[:case_type] = 0
+    params[:case_type] = 1
     # params[:quantile_value] = params[:case_type] == 0 ? Distributions.quantile(Chisq(params[:d]), params[:beta]) : Distributions.quantile(Chisq(params[:d]), 1 - params[:alpha])
     
     # Params for Framework

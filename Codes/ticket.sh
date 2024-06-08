@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --mem=16GB
+#SBATCH --mem=32GB
 #SBATCH --time=24:00:00
 #SBATCH --job-name=neurccopt
 #SBATCH --output=result.out
