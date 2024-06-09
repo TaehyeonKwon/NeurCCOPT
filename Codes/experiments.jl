@@ -6,34 +6,31 @@ include("model_training.jl")
 include("optimization.jl")
 include("utils.jl")
 include("problems/hong.jl")
-include("problems/nonconvex.jl")
-include("problems/credit_risk.jl")
+# include("problems/nonconvex.jl")
+# include("problems/credit_risk.jl")
 
 using .DataGeneration: create_dataset, normalize, split_dataset
 using .ModelTraining: prepare_train_dataset, train_NN
 using .Optimization: iterative_retraining
 using .Hong: NormCCP
-using .Ordieres: Nonconvex
-using .Credit: Creditrisk
+# using .Ordieres: Nonconvex
+# using .Credit: Creditrisk
 using .CCPParameters: setup_parameters
 
 if !isdir("results")
     mkdir("results")
 end
 
-struct NormCCP
-end
-
-struct Nonconvex
-end
-
-struct Creditrisk
-end
+# struct Nonconvex
+# end
+ 
+# struct Creditrisk
+# end
 
 problems = Dict(
     1 => NormCCP(),
-    2 => Nonconvex(),
-    3 => Creditrisk()
+#    2 => Nonconvex(),
+#    3 => Creditrisk()
 )
 
 # Problem indicator
