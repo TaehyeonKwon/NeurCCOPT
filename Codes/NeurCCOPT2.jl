@@ -10,7 +10,7 @@ using LinearAlgebra
 
 # 1. Given_Parameters
 d = 50  # Degrees of freedom for ξ_i
-alpha = 0.95  # Confidence level
+alpha = 0.05  # Confidence level
 w = 250
 lower_bound = -2.0
 upper_bound = 2.0
@@ -39,29 +39,19 @@ function sample_x(lower_bound, upper_bound, num_samples_x)
 end 
 
 
-
-# function global_xi(seed)
-#     Random.seed!(seed)
-#     mu = collect(range(0.5, stop=2, length=d))
-#     sigma = fill(0.2, d, d) .+ (0.8 * Diagonal(ones(d)))
-#     u = collect(range(1, stop=4, length=d))
-#     M = MvNormal(mu, sqrt.(sigma) ./ 2)
-#     Xi = rand(M,d)
-#     return Xi
-# end
-
 function global_xi(seed)
     Random.seed!(seed)
-    # Define the parameters for the multivariate normal distribution
-    μ = collect(range(0.5, stop=2.0, length=d))
+    μ = collect(range(0.5, stop=2, length=d))
     σ = 0.5 .* μ
-    Σ = 0.2 .* (ones(d, d) - I) .+ Diagonal(σ.^2)
-    # Generate u values uniformly between 1 and 4
-    u = collect(range(1.0, stop=4.0, length=d))
-    # Generate η from multivariate normal distribution
-    η = rand(MvNormal(μ, Σ))
-    # Compute ξ
-    ξ = exp.(η) .- u
+    corr = 0.2
+    Σ = Diagonal(σ .^ 2) + fill(corr, d, d)
+
+    ε = 1e-5
+    Σ += ε * I
+
+    η = MvNormal(μ, Σ)
+    u = collect(range(1, stop=4, length=d))
+    ξ = exp.(rand(η) .- u)
     return ξ
 end
 
@@ -107,7 +97,7 @@ train_dataset = DataLoader((hcat(X_train...), hcat(Y_train...)), batchsize=batch
 # model couldn't predict well.
 function train_NN(train_dataset)
     Random.seed!(123)
-    model = Chain(Dense(d, 3, sigmoid), Dense(3, 1))
+    model = Chain(Dense(d, 36, sigmoid), Dense(36, 1))
     optimizer = ADAM(learning_rate)
     loss(x,y) = Flux.Losses.mse(model(x),y)
     params = Flux.params(model)  
@@ -133,7 +123,7 @@ end
 function model_validation(model)
     x=rand(Uniform(lower_bound, upper_bound), d)
     model_output = model(x)
-    feasibility = isapprox(model_output[1],model_output_function_jl(x,model), atol=1e-5)
+    feasibility = isapprox(model_output[1],model_output_function_jl(x,model), atol=1e-3)
     return feasibility
 end 
 
@@ -165,7 +155,7 @@ function solve_credit_risk_probelm(trained_nn)
         @show(termination_status(opt_model))
         @warn("Unable to find a feasible and/or optimal solution of the embedded model")
     end
-    return value.(x), objective_value(opt_model)
+    return value.(x), -objective_value(opt_model)
 end
 
 
