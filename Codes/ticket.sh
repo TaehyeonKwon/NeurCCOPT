@@ -6,7 +6,7 @@
 #SBATCH --job-name=neurccopt
 #SBATCH --output=result.out
 #SBATCH --error=result.err
-#SBATCH --account=azs7266_sc
+#SBATCH --account=azs7266_p_gpu
 #SBATCH --partition=sla-prio
 
 

@@ -6,25 +6,46 @@ include("model_training.jl")
 include("optimization.jl")
 include("utils.jl")
 include("problems/hong.jl")
+include("problems/nonconvex.jl")
+include("problems/credit_risk.jl")
 
 using .DataGeneration: create_dataset, normalize, split_dataset
 using .ModelTraining: prepare_train_dataset, train_NN
 using .Optimization: iterative_retraining
 using .Hong: NormCCP
+using .Ordieres: Nonconvex
+using .Credit: Creditrisk
 using .CCPParameters: setup_parameters
 
 if !isdir("results")
     mkdir("results")
 end
 
+struct NormCCP
+end
 
-fixed_params = setup_parameters()
+struct Nonconvex
+end
+
+struct Creditrisk
+end
+
+problems = Dict(
+    1 => NormCCP(),
+    2 => Nonconvex(),
+    3 => Creditrisk()
+)
+
+# Problem indicator
+indicator = 1
+current_problem = problems[indicator]
+fixed_params = setup_parameters(indicator)
 
 param_ranges = Dict(
-    :N => [10,100,1000],
-    :num_samples_x => [30, 100, 500, 1000],
-    :K => [10, 30, 50],
-    :theta => 0.1:0.1:0.9
+    :N => [100,1000],
+    :num_samples_x => [30, 100],
+    :K => [10, 30],
+    :theta => 0.8:0.1:0.9
 )
 
 
@@ -41,8 +62,7 @@ function run_experiment(params)
     
     train_dataset = prepare_train_dataset(X_train, Y_train, feasibility_train, params)
     nn_model = train_NN(train_dataset, params)
-    P = NormCCP()
-    
+    P = deepcopy(current_problem)
     quantile_values, solutions, feasibility = iterative_retraining(P, nn_model, X_train, Y_train, params)
     
     return quantile_values, solutions, feasibility

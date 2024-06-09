@@ -6,7 +6,7 @@ using UnPack
 
 export AbstractNorm, NormCCP, NeuralModel
 
-abstract type AbstractNorm end
+abstract type AbstractCCP end
 
 @with_kw struct NormCCP <: AbstractNorm
     d::Int = 5
