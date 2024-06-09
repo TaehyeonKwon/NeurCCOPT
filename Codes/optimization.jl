@@ -2,7 +2,7 @@ module Optimization
 
 include("utils.jl")
 include("problems/hong.jl")
-using .Hong: AbstractCCP, NormCCP, NeuralModel
+using .Hong: AbstractNorm, NormCCP, NeuralModel
 
 export iterative_retraining
 
