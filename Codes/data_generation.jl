@@ -46,7 +46,8 @@ end
 function normalize(data)
     min_val = minimum(data)
     max_val = maximum(data)
-    normalized_data = (data .- min_val) ./ (max_val - min_val)
+    # normalized_data = (data .- min_val) ./ (max_val - min_val)
+    normalized_data = data
     return normalized_data, min_val, max_val
 end
 

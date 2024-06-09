@@ -21,47 +21,46 @@ end
 
 function train_NN(train_dataset, params)
     Random.seed!(123)
-    model = Chain(Dense(params[:d], 3), Dense(3, 1, sigmoid))
+    model = Chain(Dense(params[:d], 3,sigmoid), Dense(3, 1))
     optimizer = ADAM(params[:learning_rate])
 
-    function custom_loss(x, y, model)
-        pred = model(x)
-        quantile_pred = vec(pred)
+    # function custom_loss(x, y, model)
+    #     pred = model(x)
+    #     quantile_pred = vec(pred)
         
-        loss_quantile = Flux.Losses.binarycrossentropy(quantile_pred, vec(y))
-        pred_feasibility = cc_feasibility(quantile_pred)
-        penalty = sum((1 .- pred_feasibility) .* abs.(quantile_pred .- y)) / length(pred_feasibility)
+    #     loss_quantile = Flux.Losses.binarycrossentropy(quantile_pred, vec(y))
+    #     pred_feasibility = cc_feasibility(quantile_pred)
+    #     penalty = sum((1 .- pred_feasibility) .* abs.(quantile_pred .- y)) / length(pred_feasibility)
         
-        return loss_quantile + 3*penalty
-    end
+    #     return loss_quantile + 3*penalty
+    # end
     
-    model_params = Flux.params(model)
-    for epoch in 1:params[:epochs]
-        for batch in train_dataset
-            x, y = batch
-            gs = Flux.gradient(model_params) do
-                custom_loss(x, y, model)
-            end
-            Flux.Optimise.update!(optimizer, model_params, gs)
-        end
-
-        if epoch % 5 == 0 
-            current_loss = mean([custom_loss(batch[1], batch[2], model) for batch in train_dataset])
-           #  @info "Epoch: $epoch , Loss: $current_loss"
-        end
-    end
-    # # loss(x, y) = Flux.Losses.mse(model(x), y)
-    # loss(x, y) = Flux.Losses.binarycrossentropy(model(x), y)
     # model_params = Flux.params(model)
     # for epoch in 1:params[:epochs]
     #     for batch in train_dataset
-    #         Flux.train!(loss, model_params, [batch], optimizer)
+    #         x, y = batch
+    #         gs = Flux.gradient(model_params) do
+    #             custom_loss(x, y, model)
+    #         end
+    #         Flux.Optimise.update!(optimizer, model_params, gs)
     #     end
+
     #     if epoch % 5 == 0 
-    #         current_loss = mean([loss(first(batch), last(batch)) for batch in train_dataset])
-    #         @info "Epoch: $epoch , Loss: $current_loss"
+    #         current_loss = mean([custom_loss(batch[1], batch[2], model) for batch in train_dataset])
+    #        #  @info "Epoch: $epoch , Loss: $current_loss"
     #     end
     # end
+    loss(x, y) = Flux.Losses.mse(model(x), y)
+    model_params = Flux.params(model)
+    for epoch in 1:params[:epochs]
+        for batch in train_dataset
+            Flux.train!(loss, model_params, [batch], optimizer)
+        end
+        if epoch % 5 == 0 
+            current_loss = mean([loss(first(batch), last(batch)) for batch in train_dataset])
+            @info "Epoch: $epoch , Loss: $current_loss"
+        end
+    end
 
     return model
 end

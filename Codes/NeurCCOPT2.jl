@@ -21,7 +21,7 @@ n_samples = 1000
 
 # 2. hyperparameters
 N = 10^3 # number of scenario
-num_samples_x = 1000  # initial generated number of x
+num_samples_x = 10000  # initial generated number of x
 epsilon = 100 # threshold for embedded nn constraint
 seed = 1 # random seed for data generation
 ## 2.1 NN model
@@ -40,7 +40,7 @@ end
 
 
 function global_xi(seed)
-    Random.seed!(seed)
+    # Random.seed!(seed)
     μ = collect(range(0.5, stop=2, length=d))
     σ = 0.5 .* μ
     corr = 0.2

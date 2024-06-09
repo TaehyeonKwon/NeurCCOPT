@@ -1,16 +1,12 @@
 using CSV, DataFrames, Random
 using IterTools: product
 
-include("data_generation.jl")
-include("model_training.jl")
 include("optimization.jl")
 include("utils.jl")
 include("problems/hong.jl")
 # include("problems/nonconvex.jl")
 # include("problems/credit_risk.jl")
 
-using .DataGeneration: create_dataset, normalize, split_dataset
-using .ModelTraining: prepare_train_dataset, train_NN
 using .Optimization: iterative_retraining
 using .Hong: NormCCP
 # using .Ordieres: Nonconvex
