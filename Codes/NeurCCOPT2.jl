@@ -9,11 +9,11 @@ using LinearAlgebra
 
 
 # 1. Given_Parameters
-d = 5  # Degrees of freedom for ξ_i
+d = 50  # Degrees of freedom for ξ_i
 alpha = 0.95  # Confidence level
 w = 250
 lower_bound = -2.0
-upper_boudn = 2.0
+upper_bound = 2.0
 q = collect(range(0, stop =10, length =d))
 r = collect(range(0.02, stop=0.12, length=d))
 n_samples = 1000
@@ -40,26 +40,41 @@ end
 
 
 
+# function global_xi(seed)
+#     Random.seed!(seed)
+#     mu = collect(range(0.5, stop=2, length=d))
+#     sigma = fill(0.2, d, d) .+ (0.8 * Diagonal(ones(d)))
+#     u = collect(range(1, stop=4, length=d))
+#     M = MvNormal(mu, sqrt.(sigma) ./ 2)
+#     Xi = rand(M,d)
+#     return Xi
+# end
+
 function global_xi(seed)
     Random.seed!(seed)
-    mu = collect(range(0.5, stop=2, length=d))
-    sigma = fill(0.2, d, d) .+ (0.8 * Diagonal(ones(d)))
-    u = collect(range(1, stop=4, length=d))
-    M = MvNormal(mu, sqrt.(sigma) ./ 2)
-    Xi = rand(M,d)
-    return Xi
+    # Define the parameters for the multivariate normal distribution
+    μ = collect(range(0.5, stop=2.0, length=d))
+    σ = 0.5 .* μ
+    Σ = 0.2 .* (ones(d, d) - I) .+ Diagonal(σ.^2)
+    # Generate u values uniformly between 1 and 4
+    u = collect(range(1.0, stop=4.0, length=d))
+    # Generate η from multivariate normal distribution
+    η = rand(MvNormal(μ, Σ))
+    # Compute ξ
+    ξ = exp.(η) .- u
+    return ξ
 end
 
 
 function cc_g(x,sample_xi)
-   return (exp.(sample_xi) .- u).*x
+   return dot(sample_xi, x)-w
 end
 
 
-function quantile(x, seed)
-    results = Float64[] 
+function compute_quantile(x, seed)
+    results = Float64[]
     for i in 1:N
-        sample_xi = global_xi(seed + i)
+        sample_xi = global_xi(seed+i)
         push!(results, cc_g(x, sample_xi))
     end
     sorted_results = sort(results; rev=true)
@@ -70,7 +85,7 @@ end
 
 function create_dataset(lower_bound, upper_bound, num_samples_x, seed)
     X = sample_x(lower_bound, upper_bound, num_samples_x)
-    Y = [quantile(x,seed) for x in X]
+    Y = [compute_quantile(x,seed) for x in X]
     return X, Y
 end
 
@@ -100,8 +115,10 @@ function train_NN(train_dataset)
         for batch in train_dataset
             Flux.train!(loss, params, [batch], optimizer)
         end
-        current_loss = mean([loss(first(batch), last(batch)) for batch in train_dataset])
-        @info "Epoch: $epoch , Loss:  $current_loss"
+        if epoch % 5 == 0
+             current_loss = mean([loss(first(batch), last(batch)) for batch in train_dataset])
+             @info "Epoch: $epoch , Loss:  $current_loss"
+        end
     end
     return model
 end
@@ -136,13 +153,13 @@ function solve_credit_risk_probelm(trained_nn)
         return x_val[1]
     end   
     @variable(opt_model, lower_bound <= x[1:d] <= upper_bound) 
-    @objective(opt_model, Min,-sum(q[i]*r[i]*x[i] for i in 1:d) / sum(q))
+    @objective(opt_model, Min, (-sum(q[i]*r[i]*x[i] for i in 1:d) / sum(q)))
     @constraint(opt_model, sum(q[i] * x[i] for i in 1:d) == sum(q))
     for i in 1:d
         @constraint(opt_model, q[i] * x[i] <= 0.20*sum(q))
     end
     @operator(opt_model, new_const, d, (x...) -> f(collect(x)))
-    @constraint(opt_model, new_const(x...) <= w)
+    @constraint(opt_model, new_const(x...) <= 0)
     optimize!(opt_model)
     if !is_solved_and_feasible(opt_model; allow_almost = true)
         @show(termination_status(opt_model))
@@ -160,16 +177,17 @@ println("Initial model training completed!")
 function iterative_retraining(iterations, K, theta, model)
     for iteration in 1:iterations 
         @assert model_validation(model)
-        x_star_jump,optimal_value = solve_credit_risk_probelm(lower_bound, upper_bound, alpha,model)
-        feasi_quantile = quantile(x_star_jump, seed)
-        
+        x_star_jump,optimal_value = solve_credit_risk_probelm(model)
+        feasi_quantile = compute_quantile(x_star_jump, seed)
+        println("quantile value: ", feasi_quantile)
+        println("optimal value: ", optimal_value)        
         if feasi_quantile > 0
             println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
             for k in 1:K
                 bar_x = rand(Uniform(lower_bound, upper_bound), d)
                 x_k = theta*x_star_jump + (1-theta)*bar_x
                 push!(X_train, x_star_jump)
-                push!(Y_train, quantile(x_k,seed))
+                push!(Y_train, compute_quantile(x_k,seed))
             end
             X_train_updated, Y_train_updated = hcat(X_train...), hcat(Y_train...)
             train_dataset = DataLoader((X_train_updated, Y_train_updated), batchsize=batch_size, shuffle=true)

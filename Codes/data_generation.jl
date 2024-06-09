@@ -2,7 +2,7 @@ module DataGeneration
 
 using Random, Distributions, LinearAlgebra
 
-export create_dataset, generate_sample, sample_x, quantile, normalize, split_dataset, cc_feasibility
+export create_dataset, generate_sample, sample_x, compute_quantile, normalize, split_dataset, cc_feasibility
 
 function sample_x(lower_bound, upper_bound, num_samples_x, d)
     return [rand(Uniform(lower_bound, upper_bound), d) for _ in 1:num_samples_x]
@@ -20,7 +20,7 @@ function generate_sample(seed, d, m, case_type)
     end
 end
 
-function quantile(x, seed, N, d, m, alpha, case_type)
+function compute_quantile(x, seed, N, d, m, alpha, case_type)
     results = Float64[]
     for i in 1:N
         sample_xi = generate_sample(seed + i, d, m, case_type)
@@ -38,7 +38,7 @@ end
 
 function create_dataset(params)
     X = sample_x(params[:lower_bound], params[:upper_bound], params[:num_samples_x], params[:d])
-    Y = [quantile(x, params[:seed], params[:N], params[:d], params[:m], params[:alpha], params[:case_type]) for x in X]
+    Y = [compute_quantile(x, params[:seed], params[:N], params[:d], params[:m], params[:alpha], params[:case_type]) for x in X]
     feasibility = cc_feasibility(Y)
     return X, Y, feasibility
 end

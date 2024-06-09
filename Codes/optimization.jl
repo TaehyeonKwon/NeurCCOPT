@@ -15,7 +15,7 @@ function iterative_retraining(P, model, X_train, Y_train, params)
         @assert model_validation(model, params[:lower_bound], params[:upper_bound], params[:d])
         x_star_jump, optimal_value = NeuralModel(P, model, params)
         # println("x_star: ",x_star_jump)
-        feasi_quantile = quantile(x_star_jump, params[:seed], params[:N], params[:d], params[:m], params[:alpha], params[:case_type])
+        feasi_quantile = compute_quantile(x_star_jump, params[:seed], params[:N], params[:d], params[:m], params[:alpha], params[:case_type])
         # plot_quantile_predictions(X_train, Y_train, model, iteration)
         # println(feasi_quantile)
 
@@ -28,7 +28,7 @@ function iterative_retraining(P, model, X_train, Y_train, params)
                 bar_x = rand(Uniform(params[:lower_bound], params[:upper_bound]), params[:d])
                 x_k = params[:theta] * x_star_jump + (1 - params[:theta]) * bar_x
                 push!(X_train, x_k)
-                y_k = quantile(x_k, params[:seed], params[:N], params[:d], params[:m], params[:alpha], params[:case_type])
+                y_k = compute_quantile(x_k, params[:seed], params[:N], params[:d], params[:m], params[:alpha], params[:case_type])
                 if y_k>params[:Y_max]
                     params[:Y_max] = y_k
                 end
