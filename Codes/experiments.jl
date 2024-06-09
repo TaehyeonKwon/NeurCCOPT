@@ -3,35 +3,33 @@ using IterTools: product
 
 include("optimization.jl")
 include("utils.jl")
-include("problems/hong.jl")
+include("problems/hong2.jl")
 # include("problems/nonconvex.jl")
 # include("problems/credit_risk.jl")
 
 using .Optimization: iterative_retraining
-using .Hong: NormCCP
-# using .Ordieres: Nonconvex
-# using .Credit: Creditrisk
+# using .Hong: HongProblem, sample_x, global_xi, cc_g, neurconst, norm_opt
 using .CCPParameters: setup_parameters
+
+
+using .Hong: HongProblem, sample_x, global_xi, cc_g, neurconst, norm_opt
+
+
 
 if !isdir("results")
     mkdir("results")
 end
 
-# struct Nonconvex
-# end
- 
-# struct Creditrisk
-# end
 
 problems = Dict(
-    1 => NormCCP(),
-#    2 => Nonconvex(),
-#    3 => Creditrisk()
+    1 => (HongProblem, sample_x, global_xi, cc_g, neurconst, norm_opt)
+    # 2 => (NonconvexProblem, ...)
+    # 3 => (CreditRiskProblem, ...)
 )
 
 # Problem indicator
 indicator = 1
-current_problem = problems[indicator]
+problem_info = problems[indicator]
 fixed_params = setup_parameters(indicator)
 
 param_ranges = Dict(
@@ -45,19 +43,14 @@ param_ranges = Dict(
 combinations = product(values(param_ranges)...)
 
 
-function run_experiment(params)
-    X, Y, Feasibility = create_dataset(params)
-    Y_normalized, Y_min, Y_max = normalize(Y)
-    params[:Y_min] = Y_min
-    params[:Y_max] = Y_max
-
-    X_train, X_test, Y_train, Y_test, feasibility_train, feasibility_test = split_dataset(X, Y_normalized, Feasibility)
-    
-    train_dataset = prepare_train_dataset(X_train, Y_train, feasibility_train, params)
+function run_experiment(params,problem_info)   
+    problem_constructor, sample_x_func, global_xi_func, cc_g_func, neurconst_func, norm_opt_func = problem_info
+    X, Y = create_dataset(params, sample_x_func,global_xi_func, cc_g_func)
+    X_train, X_test, Y_train, Y_test = split_dataset(X, Y)
+    train_dataset = prepare_train_dataset(X_train, Y_train, params)
     nn_model = train_NN(train_dataset, params)
-    P = deepcopy(current_problem)
-    quantile_values, solutions, feasibility = iterative_retraining(P, nn_model, X_train, Y_train, params)
-    
+    problem_instance = problem_constructor(nn_model, params) 
+    quantile_values, solutions, feasibility = iterative_retraining(problem_instance, nn_model, X_train, Y_train, params, norm_opt_func, global_xi_func, cc_g_func)    
     return quantile_values, solutions, feasibility
 end
 
@@ -72,7 +65,7 @@ for comb in combinations
         current_params[key] = comb[i]
     end
     
-    quantile_values, x_solutions, feasibility = run_experiment(current_params)
+    quantile_values, x_solutions, feasibility = run_experiment(current_params,problem_info)
     
     result_df = DataFrame()
     for k in 1:length(quantile_values)

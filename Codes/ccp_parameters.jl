@@ -15,7 +15,7 @@ function setup_parameters(indicator)
         params[:beta] = (1 - params[:alpha])^(1 / params[:m])
         params[:lower_bound] = 0.0
         params[:upper_bound] = 10.0
-        params[:case_type] = 0
+        params[:case_type] = 1
         # params[:quantile_value] = params[:case_type] == 0 ? Distributions.quantile(Chisq(params[:d]), params[:beta]) : Distributions.quantile(Chisq(params[:d]), 1 - params[:alpha])
     end
 
@@ -47,7 +47,7 @@ function setup_parameters(indicator)
     params[:num_samples_x] = 100
     params[:epsilon] = 0
     params[:seed] = 1
-    params[:iterations] = 300
+    params[:iterations] = 1000
     params[:K] = 30
     params[:theta] = 0.9
 

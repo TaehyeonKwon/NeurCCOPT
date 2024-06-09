@@ -36,22 +36,30 @@ n_samples = 10000  # num of MC
 
 
 
-
-function sample_x(lower_bound, upper_bound, num_samples_x, d)
+function sample_x(lower_bound, upper_bound, num_samples_x)
     return [rand(Uniform(lower_bound, upper_bound), d) for _ in 1:num_samples_x]
 end 
 
-function global_xi(params)
-    mu = collect(range(0.5, stop=2, length=params[:d]))
-    sigma = fill(0.2, params[:d], params[:d]) .+ (0.8 * Diagonal(ones(params[:d]))) 
-    u = collect(range(1, stop=4, length=params[:d]))
-    M = MvNormal(mu, sqrt.(sigma) ./ 2)  
-    Xi = rand(M)  
-    return Xi
+
+function global_xi(seed)
+    # Random.seed!(seed)
+    μ = collect(range(0.5, stop=2, length=d))
+    σ = 0.5 .* μ
+    corr = 0.2
+    Σ = Diagonal(σ .^ 2) + fill(corr, d, d)
+
+    ε = 1e-5
+    Σ += ε * I
+
+    η = MvNormal(μ, Σ)
+    u = collect(range(1, stop=4, length=d))
+    ξ = exp.(rand(η) .- u)
+    return ξ
 end
 
-function cc_g(x,params)
-    return (exp.(global_xi(params[:d])) .- params[:upper_bound]).*x - 250
+
+function cc_g(x,sample_xi)
+   return dot(sample_xi, x)-w
 end
 
 
@@ -64,26 +72,27 @@ function neurconst(x::Vector, trained_nn)
 end 
 
 
-
-
-function solve_credit_risk_problem(trained_nn, params)
-    model = Model(Ipopt.Optimizer)
-    set_silent(model)
-    @variable(model, lower_bound <= x[i=1:d] <= upper_bound)
-    @objective(model, Min, -sum(q[i] * r[i] * x[i] for i in 1:d) / sum(q))
-    @constraint(model, sum(q[i] * x[i] for i in 1:d) == sum(q))
+function credit_risk_opt(trained_nn,params)
+    opt_model = Model(Ipopt.Optimizer)
+    set_silent(opt_model)
+    @variable(opt_model, lower_bound <= x[1:d] <= upper_bound) 
+    @objective(opt_model, Min, (-sum(q[i]*r[i]*x[i] for i in 1:d) / sum(q)))
+    @constraint(opt_model, sum(q[i] * x[i] for i in 1:d) == sum(q))
     for i in 1:d
-        @constraint(model, q[i] * x[i] <= 0.20 * sum(q))
+        @constraint(opt_model, q[i] * x[i] <= 0.20*sum(q))
     end
-    @operator(model, new_const, d, (x...) -> neurconst(collect(x), trained_nn))
-    @constraint(model, new_const(x...) <= 0)
-    optimize!(model)
-    if !is_solved_and_feasible(model; allow_almost = true)
-        # @show termination_status(model)
+    @operator(opt_model, new_const, d, (x...) -> neurconst(collect(x),trained_nn))
+    @constraint(opt_model, new_const(x...) <= 0)
+    optimize!(opt_model)
+    if !is_solved_and_feasible(opt_model; allow_almost = true)
+        # @show(termination_status(opt_model))
         # @warn("Unable to find a feasible and/or optimal solution of the embedded model")
     end
-    return value.(x), objective_value(model)
+    return value.(x), -objective_value(opt_model)
 end
+
+
+
 end
 
 

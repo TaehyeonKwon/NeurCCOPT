@@ -15,6 +15,6 @@ include("model_training.jl")
 include("ccp_parameters.jl")
 
 using .CCPParameters: setup_parameters
-using .DataGeneration: create_dataset, generate_sample, sample_x, compute_quantile, normalize, split_dataset, cc_feasibility
+using .DataGeneration: compute_quantile,create_dataset,split_dataset
 using .ModelTraining: prepare_train_dataset, train_NN, model_output_function_jl, model_validation
 using .ResultPlot: plot_quantile_predictions
