@@ -3,18 +3,14 @@ using IterTools: product
 
 include("optimization.jl")
 include("utils.jl")
-include("problems/hong2.jl")
+include("problems/hong.jl")
+include("problems/credit_risk.jl")
 # include("problems/nonconvex.jl")
-# include("problems/credit_risk.jl")
 
 using .Optimization: iterative_retraining
-# using .Hong: HongProblem, sample_x, global_xi, cc_g, neurconst, norm_opt
 using .CCPParameters: setup_parameters
-
-
-using .Hong: HongProblem, sample_x, global_xi, cc_g, neurconst, norm_opt
-
-
+using .Hong: HongProblem, sample_x as hong_sample_x, global_xi as hong_global_xi, cc_g as hong_cc_g, neurconst as hong_neurconst, norm_problem
+using .Credit: CreditProblem, sample_x as credit_sample_x, global_xi as credit_global_xi, cc_g as credit_cc_g, neurconst as credit_neurconst, credit_problem
 
 if !isdir("results")
     mkdir("results")
@@ -22,13 +18,12 @@ end
 
 
 problems = Dict(
-    1 => (HongProblem, sample_x, global_xi, cc_g, neurconst, norm_opt)
-    # 2 => (NonconvexProblem, ...)
-    # 3 => (CreditRiskProblem, ...)
+    1 => (HongProblem, hong_sample_x, hong_global_xi, hong_cc_g, hong_neurconst, norm_problem),
+    2 => (CreditProblem, credit_sample_x, credit_global_xi, credit_cc_g, credit_neurconst, credit_problem)
 )
 
 # Problem indicator
-indicator = 1
+indicator = 2
 problem_info = problems[indicator]
 fixed_params = setup_parameters(indicator)
 
@@ -44,13 +39,13 @@ combinations = product(values(param_ranges)...)
 
 
 function run_experiment(params,problem_info)   
-    problem_constructor, sample_x_func, global_xi_func, cc_g_func, neurconst_func, norm_opt_func = problem_info
+    problem_constructor, sample_x_func, global_xi_func, cc_g_func, neurconst_func, opt_problem = problem_info
     X, Y = create_dataset(params, sample_x_func,global_xi_func, cc_g_func)
     X_train, X_test, Y_train, Y_test = split_dataset(X, Y)
     train_dataset = prepare_train_dataset(X_train, Y_train, params)
     nn_model = train_NN(train_dataset, params)
     problem_instance = problem_constructor(nn_model, params) 
-    quantile_values, solutions, feasibility = iterative_retraining(problem_instance, nn_model, X_train, Y_train, params, norm_opt_func, global_xi_func, cc_g_func)    
+    quantile_values, solutions, feasibility = iterative_retraining(problem_instance, nn_model, X_train, Y_train, params, opt_problem, global_xi_func, cc_g_func)    
     return quantile_values, solutions, feasibility
 end
 
@@ -64,7 +59,6 @@ for comb in combinations
     for (i, key) in enumerate(keys_list)
         current_params[key] = comb[i]
     end
-    
     quantile_values, x_solutions, feasibility = run_experiment(current_params,problem_info)
     
     result_df = DataFrame()
@@ -75,7 +69,7 @@ for comb in combinations
         append!(result_df, DataFrame(x_solution = x_solution_str, quantile_value = quantile_value, is_feasible = is_feasible))
     end
 
-    file_name = "results/result_d$(current_params[:d])_m$(current_params[:m])_case$(current_params[:case_type])_N$(current_params[:N])_samples$(current_params[:num_samples_x])_epsilon$(current_params[:epsilon])_K$(current_params[:K])_theta$(current_params[:theta]).csv"
+    file_name = "results/result_problem$(indicator)_d$(current_params[:d])_N$(current_params[:N])_K$(current_params[:K])_theta$(current_params[:theta]).csv"
     CSV.write(file_name, result_df)
     println("Train done! Result Saved!")
 end

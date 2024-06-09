@@ -1,65 +1,38 @@
 module Credit
 
+include("../utils.jl")
 
-using JuMP, Ipopt, Distributions, Flux
-using Flux.Data: DataLoader
-using Plots
-using Statistics
 using Convex, SCS, Random
 using LinearAlgebra
 
-
-export AbstractCredit
-
-abstract type AbstractCredit end
-
-@with_kw struct Creditrisk <: AbstractCredit
-    d::Int = 5
-    m::Int = 10
-    u::Float64 = 10.0^2
-    ρ::Float64 = 2.0
-    α::Float64 = 0.05
-    β::Float64 = (1-α)^(1/m)
-    lb::Float64 = 0.0
-    ub::Float64 = 10.0
-end
-
-
-d = 5  # num of obilgor
-alpha = 0.95  # CI for VaR 
-w = 250  # Threshold VaR 
-lower_bound = -2.0
-upper_bound = 2.0
-q = collect(range(0, stop=10, length=d))
-r = collect(range(0.02, stop=0.12, length=d))
-n_samples = 10000  # num of MC
+export CreditProblem, sample_x, global_xi, cc_g, neurconst, credit_problem
 
 
 
-function sample_x(lower_bound, upper_bound, num_samples_x)
-    return [rand(Uniform(lower_bound, upper_bound), d) for _ in 1:num_samples_x]
+function sample_x(params)
+    return [rand(Uniform(params[:lower_bound], params[:upper_bound]), params[:d]) for _ in 1:params[:num_samples_x]]
 end 
 
 
-function global_xi(seed)
-    # Random.seed!(seed)
-    μ = collect(range(0.5, stop=2, length=d))
+function global_xi(seed, params)
+    Random.seed!(seed)
+    μ = collect(range(0.5, stop=2, length=params[:d]))
     σ = 0.5 .* μ
     corr = 0.2
-    Σ = Diagonal(σ .^ 2) + fill(corr, d, d)
+    Σ = Diagonal(σ .^ 2) + fill(corr, params[:d], params[:d])
 
     ε = 1e-5
     Σ += ε * I
 
     η = MvNormal(μ, Σ)
-    u = collect(range(1, stop=4, length=d))
+    u = collect(range(1, stop=4, length=params[:d]))
     ξ = exp.(rand(η) .- u)
     return ξ
 end
 
 
 function cc_g(x,sample_xi)
-   return dot(sample_xi, x)-w
+   return dot(sample_xi, x)-250
 end
 
 
@@ -71,24 +44,33 @@ function neurconst(x::Vector, trained_nn)
     return x_val[1]
 end 
 
+struct CreditProblem
+    trained_nn::Chain
+    params::Dict{Symbol, Any}
 
-function credit_risk_opt(trained_nn,params)
-    opt_model = Model(Ipopt.Optimizer)
-    set_silent(opt_model)
-    @variable(opt_model, lower_bound <= x[1:d] <= upper_bound) 
-    @objective(opt_model, Min, (-sum(q[i]*r[i]*x[i] for i in 1:d) / sum(q)))
-    @constraint(opt_model, sum(q[i] * x[i] for i in 1:d) == sum(q))
-    for i in 1:d
-        @constraint(opt_model, q[i] * x[i] <= 0.20*sum(q))
+    function CreditProblem(trained_nn,params)
+        new(trained_nn, params)
     end
-    @operator(opt_model, new_const, d, (x...) -> neurconst(collect(x),trained_nn))
-    @constraint(opt_model, new_const(x...) <= 0)
-    optimize!(opt_model)
-    if !is_solved_and_feasible(opt_model; allow_almost = true)
+end
+
+
+function credit_problem(problem::CreditProblem)
+    model = Model(Ipopt.Optimizer)
+    set_silent(model)
+    @variable(model, problem.params[:lower_bound] <= x[1:problem.params[:d]] <= problem.params[:upper_bound]) 
+    @objective(model, Min, (-sum(problem.params[:q][i]*problem.params[:r][i]*x[i] for i in 1:problem.params[:d]) / sum(problem.params[:q])))
+    @constraint(model, sum(problem.params[:q][i] * x[i] for i in 1:problem.params[:d]) == sum(problem.params[:q]))
+    for i in 1:problem.params[:d]
+        @constraint(model, problem.params[:q][i] * x[i] <= 0.20*sum(problem.params[:q]))
+    end
+    @operator(model, new_const, problem.params[:d], (x...) -> neurconst(collect(x),problem.trained_nn))
+    @constraint(model, new_const(x...) <= 0)
+    optimize!(model)
+    if !is_solved_and_feasible(model; allow_almost = true)
         # @show(termination_status(opt_model))
         # @warn("Unable to find a feasible and/or optimal solution of the embedded model")
     end
-    return value.(x), -objective_value(opt_model)
+    return value.(x), -objective_value(model)
 end
 
 

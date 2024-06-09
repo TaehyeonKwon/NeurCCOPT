@@ -1,25 +1,34 @@
 module Hong
   
-using Parameters
-using JuMP, Ipopt
+include("../utils.jl")
 using UnPack
 
-export AbstractNorm, NormCCP, NeuralModel
 
-abstract type AbstractNorm end
+export HongProblem, sample_x, global_xi, cc_g, neurconst, norm_opt
 
-@with_kw struct NormCCP <: AbstractNorm
-    d::Int = 5
-    m::Int = 10
-    u::Float64 = 10.0^2
-    ρ::Float64 = 2.0
-    α::Float64 = 0.05
-    β::Float64 = (1-α)^(1/m)
-    lb::Float64 = 0.0
-    ub::Float64 = 10.0
+
+function sample_x(params)
+    return [rand(Uniform(params[:lower_bound], params[:upper_bound]), params[:d]) for _ in 1:params[:num_samples_x]]
+end 
+
+function global_xi(seed,params)
+    Random.seed!(seed)
+    if params[:case_type] == 0
+        return rand(Normal(0, 1), params[:d], params[:m])
+    else 
+        means = [j / params[:d] for j in 1:params[:d]]
+        cov_matrix = fill(0.05, params[:d], params[:d])
+        cov_matrix[diagind(cov_matrix)] .= 1.0
+        return rand(MvNormal(means, cov_matrix), params[:m])
+    end
 end
 
-function neurconst(x::Vector, trained_nn, Y_max, Y_min)
+
+function cc_g(x, sampled_xi)
+    return maximum((dot(x.^2, sampled_xi[:, i].^2) - 100) for i in 1:size(sampled_xi, 2))
+end
+
+function neurconst(x::Vector, trained_nn)
     x_val = copy(x)
     for i in 1:length(trained_nn)
         x_val = trained_nn[i].σ.(trained_nn[i].weight * x_val .+ trained_nn[i].bias)
@@ -28,14 +37,23 @@ function neurconst(x::Vector, trained_nn, Y_max, Y_min)
 end 
 
 
-# function NeuralModel(P, trained_nn, params)
-#     # @unpack d,lb,ub,ϵ = P
+struct HongProblem
+    trained_nn::Chain
+    params::Dict{Symbol, Any}
+
+    function HongProblem(trained_nn,params)
+        new(trained_nn, params)
+    end
+end
+
+
+# function norm_opt(problem::HongProblem)
 #     model = Model(Ipopt.Optimizer)
 #     set_silent(model)
-#     @variable(model, params[:lower_bound] <= x[1:params[:d]] <= params[:upper_bound])
+#     @variable(model, params[:lower_bound] <= x[1:params[:d] <= params[:upper_bound]])
 #     @objective(model, Min, -sum(x))
 #     @operator(model, new_const, params[:d], (x...) -> neurconst(collect(x), trained_nn, params[:Y_max], params[:Y_min]))
-#     @constraint(model, (new_const(x...) * (params[:Y_max]-params[:Y_min]) + params[:Y_min]) <= params[:epsilon])
+#     @constraint(model, new_const(x...) <= params[:epsilon])
 #     optimize!(model)
 #     if !is_solved_and_feasible(model; allow_almost = true)
 #         # @show termination_status(model)
@@ -45,16 +63,14 @@ end
 # end
   
 
-function NeuralModel(P, trained_nn, params)
-    # @unpack d,lb,ub,ϵ = P
+function norm_problem(problem::HongProblem)
     model = Model(Ipopt.Optimizer)
     set_silent(model)   
-    @variable(model, params[:lower_bound] <= x[1:params[:d]] <= params[:upper_bound]) 
+    @variable(model, problem.params[:lower_bound] <= x[1:problem.params[:d]] <= problem.params[:upper_bound]) 
     @objective(model, Min,0)
-    @operator(model, new_const, params[:d], (x...) -> neurconst(collect(x), trained_nn, params[:Y_max], params[:Y_min]))
-    # @constraint(model, (new_const(x...) * (params[:Y_max]-params[:Y_min]) + params[:Y_min]) <= params[:epsilon])
-    @constraint(model, new_const(x...) <= params[:epsilon])
-    @constraint(model, sum(x) >= (1*params[:d]))
+    @operator(model, new_const, problem.params[:d], (x...) -> neurconst(collect(x), problem.trained_nn))
+    @constraint(model, new_const(x...)  <= problem.params[:epsilon])
+    @constraint(model, sum(x) >= (1*problem.params[:d]))
     optimize!(model)
     if !is_solved_and_feasible(model; allow_almost = true)
        #  @show(termination_status(model))

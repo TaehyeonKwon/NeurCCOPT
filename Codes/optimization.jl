@@ -1,18 +1,18 @@
 module Optimization
 
 include("utils.jl")
-include("problems/hong2.jl")
-using .Hong: HongProblem, sample_x as hong_sample_x, global_xi as hong_global_xi, cc_g as hong_cc_g, neurconst as hong_neurconst, norm_opt as hong_norm_opt
+# include("problems/hong.jl")
+# using .Hong: HongProblem, sample_x as hong_sample_x, global_xi as hong_global_xi, cc_g as hong_cc_g, neurconst as hong_neurconst, norm_opt as hong_norm_opt
 
 export iterative_retraining
 
-function iterative_retraining(problem_instance, model, X_train, Y_train, params, norm_opt_func, global_xi_func, cc_g_func)
+function iterative_retraining(problem_instance, model, X_train, Y_train, params, opt_problem, global_xi_func, cc_g_func)
 	quantile_values = []
 	solutions = []
     feasibility = []
     for iteration in 1:params[:iterations]
         @assert model_validation(model, params[:lower_bound], params[:upper_bound], params[:d])
-        x_star_jump, optimal_value = norm_opt_func(problem_instance)
+        x_star_jump, optimal_value = opt_problem(problem_instance)
         # println("x_star: ",x_star_jump)
         # feasi_quantile = compute_quantile(x_star_jump, params, global_xi, cc_g) 
         feasi_quantile = compute_quantile(x_star_jump, params, global_xi_func, cc_g_func)

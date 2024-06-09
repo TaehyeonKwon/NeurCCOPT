@@ -19,8 +19,20 @@ function setup_parameters(indicator)
         # params[:quantile_value] = params[:case_type] == 0 ? Distributions.quantile(Chisq(params[:d]), params[:beta]) : Distributions.quantile(Chisq(params[:d]), 1 - params[:alpha])
     end
 
+    
+    # problem parameter for credit_risk.jl
+    if indicator ==2
+        params[:d] = 50  # num of obilgor
+        params[:alpha] = 0.05  # CI for VaR
+        params[:w] = 250 
+        params[:lower_bound] = -2.0
+        params[:upper_bound] = 2.0
+        params[:q] = collect(range(0, stop=10, length=params[:d]))
+        params[:r] = collect(range(0.02, stop=0.12, length=params[:d]))
+    end
+    
     # problem parameter for nonconvex.jl
-    if indicator == 2
+    if indicator == 3
         # Params for Problem
         params[:d] = 5
         params[:alpha] = 0.1
@@ -32,22 +44,12 @@ function setup_parameters(indicator)
         # params[:quantile_value] = params[:case_type] == 0 ? Distributions.quantile(Chisq(params[:d]), params[:beta]) : Distributions.quantile(Chisq(params[:d]), 1 - params[:alpha])
     end
 
-
-    if indicator ==3
-        params[:d] = 5  # num of obilgor
-        params[:alpha] = 0.95  # CI for VaR 
-        params[:lower_bound] = -2.0
-        params[:upper_bound] = 2.0
-    end
-
-
-
     # Params for Framework
-    params[:N] = 10000
+    params[:N] = 1000
     params[:num_samples_x] = 100
     params[:epsilon] = 0
     params[:seed] = 1
-    params[:iterations] = 1000
+    params[:iterations] = 300
     params[:K] = 30
     params[:theta] = 0.9
 
