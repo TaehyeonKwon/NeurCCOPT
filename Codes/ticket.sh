@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --mem=32GB
+#SBATCH --mem=8GB
 #SBATCH --time=24:00:00
 #SBATCH --job-name=neurccopt
-#SBATCH --output=result.out
-#SBATCH --error=result.err
+#SBATCH --output=result-%j.out
+#SBATCH --error=error-%j.err
 #SBATCH --account=azs7266_p_gpu
 #SBATCH --partition=sla-prio
 

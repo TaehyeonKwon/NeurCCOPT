@@ -12,7 +12,7 @@ function sample_x(params)
 end 
 
 function global_xi(seed,params)
-    # Random.seed!(seed)
+    Random.seed!(Int(seed))
     if params[:case_type] == 0
         return rand(Normal(0, 1), params[:d], params[:m])
     else 

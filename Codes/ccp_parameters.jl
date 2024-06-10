@@ -11,10 +11,13 @@ function setup_parameters(indicator)
         # Params for Problem
         params[:d] = 5
         params[:alpha] = 0.1
+        params[:sigma] = 0.11  # confidence level for quantile
+        params[:delta] = 10^(-1) # confidence level for SAA
+        params[:N_SAA] = log(1/params[:delta])/(2*(params[:alpha]-params[:sigma])^2)
         params[:m] = 5
         params[:beta] = (1 - params[:alpha])^(1 / params[:m])
         params[:lower_bound] = 0.0
-        params[:upper_bound] = 5.0
+        params[:upper_bound] = 10.0
         params[:case_type] = 0
 
         # params[:quantile_value] = params[:case_type] == 0 ? Distributions.quantile(Chisq(params[:d]), params[:beta]) : Distributions.quantile(Chisq(params[:d]), 1 - params[:alpha])
@@ -25,8 +28,8 @@ function setup_parameters(indicator)
     if indicator ==2
         params[:d] = 50  # num of obilgor
         params[:alpha] = 0.05  # CI for VaR
-        params[:sigma] = 0.06
-        params[:delta] = 10^(-1)
+        params[:sigma] = 0.06  # confidence level for quantile
+        params[:delta] = 10^(-1) # confidence level for SAA
         params[:N_SAA] = log(1/params[:delta])/(2*(params[:alpha]-params[:sigma])^2)
         params[:w] = 250 
         params[:lower_bound] = -2.0
@@ -36,7 +39,7 @@ function setup_parameters(indicator)
     end
 
     # Params for Framework
-    params[:N] = 10^7
+    params[:N] = 10^4 # sample for quantile
     params[:num_samples_x] = 100
     params[:epsilon] = 0
     params[:seed] = 1

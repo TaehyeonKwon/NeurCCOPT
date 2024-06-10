@@ -15,7 +15,7 @@ end
 
 
 function global_xi(seed, params)
-    Random.seed!(seed)
+    Random.seed!(Int(seed))
     μ = collect(range(0.5, stop=2, length=params[:d]))
     σ = 0.5 .* μ
     corr = 0.2

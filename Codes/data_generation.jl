@@ -18,7 +18,7 @@ end
 
 function SAA(x, params, global_xi, cc_g)
     results = Float64[]
-    for i in 1:params[:N]
+    for i in 1:params[:N_SAA]
         sample_xi = global_xi(params[:seed] + i, params)
         value = cc_g(x, sample_xi)
         push!(results, value <= 0 ? value : 0)

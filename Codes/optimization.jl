@@ -15,8 +15,8 @@ function iterative_retraining(problem_instance, model, X_train, Y_train, params,
         x_star_jump, optimal_value = opt_problem(problem_instance)
         # println("x_star: ",x_star_jump)
         # feasi_quantile = compute_quantile(x_star_jump, params, global_xi, cc_g) 
-        # feasi_quantile = SAA(x_star_jump, params, global_xi_func, cc_g_func)
-        feasi_quantile = compute_quantile(x_star_jump, params, global_xi_func, cc_g_func)
+        feasi_quantile = SAA(x_star_jump, params, global_xi_func, cc_g_func)
+        # feasi_quantile = compute_quantile(x_star_jump, params, global_xi_func, cc_g_func)
         push!(quantile_values, feasi_quantile)
         push!(solutions, x_star_jump)
         push!(feasibility, feasi_quantile <= 0)
@@ -38,7 +38,7 @@ function iterative_retraining(problem_instance, model, X_train, Y_train, params,
             break
         end
     end
-    return quantile_values, solutions, feasibility
+    return quantile_values, solutions, feasibility, optimal_value
 end
 
 end # module
