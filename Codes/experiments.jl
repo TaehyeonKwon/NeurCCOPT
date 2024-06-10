@@ -23,12 +23,12 @@ problems = Dict(
 )
 
 # Problem indicator
-indicator = 1
+indicator = 2
 problem_info = problems[indicator]
 fixed_params = setup_parameters(indicator)
 
 param_ranges = Dict(
-    :N => [100,1000],
+#    :N => [100,1000],
     :num_samples_x => [30, 100],
     :K => [10, 30],
     :theta => 0.8:0.1:0.9

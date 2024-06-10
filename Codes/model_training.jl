@@ -6,7 +6,7 @@ include("data_generation.jl")
 using Flux, Distributions
 using Flux.Data: DataLoader
 using Random, LinearAlgebra, Statistics
-using .DataGeneration: compute_quantile,create_dataset,split_dataset
+using .DataGeneration: compute_quantile,SAA,create_dataset,split_dataset
 using Plots
 
 
@@ -20,8 +20,7 @@ end
 
 function train_NN(train_dataset, params)
     Random.seed!(123)
-    model = Chain(Dense(params[:d], params[:hidden_layer]*2,relu), 
-            Dense(params[:hidden_layer]*2, params[:hidden_layer], sigmoid),
+    model = Chain(Dense(params[:d], params[:hidden_layer],sigmoid),
             Dense(params[:hidden_layer], 1))
     optimizer = ADAM(params[:learning_rate])
     loss(x, y) = Flux.Losses.mse(model(x), y)

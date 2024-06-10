@@ -25,6 +25,9 @@ function setup_parameters(indicator)
     if indicator ==2
         params[:d] = 50  # num of obilgor
         params[:alpha] = 0.05  # CI for VaR
+        params[:sigma] = 0.06
+        params[:delta] = 10^(-1)
+        params[:N_SAA] = log(1/params[:delta])/(2*(params[:alpha]-params[:sigma])^2)
         params[:w] = 250 
         params[:lower_bound] = -2.0
         params[:upper_bound] = 2.0
@@ -33,7 +36,7 @@ function setup_parameters(indicator)
     end
 
     # Params for Framework
-    params[:N] = 1000
+    params[:N] = 10^7
     params[:num_samples_x] = 100
     params[:epsilon] = 0
     params[:seed] = 1
