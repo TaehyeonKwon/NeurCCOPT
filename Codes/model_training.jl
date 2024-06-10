@@ -20,7 +20,9 @@ end
 
 function train_NN(train_dataset, params)
     Random.seed!(123)
-    model = Chain(Dense(params[:d], 3,sigmoid), Dense(3, 1))
+    model = Chain(Dense(params[:d], params[:hidden_layer]*2,relu), 
+            Dense(params[:hidden_layer]*2, params[:hidden_layer], sigmoid),
+            Dense(params[:hidden_layer], 1))
     optimizer = ADAM(params[:learning_rate])
     loss(x, y) = Flux.Losses.mse(model(x), y)
     model_params = Flux.params(model)
@@ -30,7 +32,7 @@ function train_NN(train_dataset, params)
         end
         if epoch % 5 == 0 
             current_loss = mean([loss(first(batch), last(batch)) for batch in train_dataset])
-            # @info "Epoch: $epoch , Loss: $current_loss"
+            @info "Epoch: $epoch , Loss: $current_loss"
         end
     end
 
@@ -112,10 +114,13 @@ end
 
 
 function model_output_function_jl(x::Vector{Float64}, model)
-    dense1_output = model[1].σ.(model[1].weight * x .+ model[1].bias)
-    dense2_output = model[2].σ.(model[2].weight * dense1_output .+ model[2].bias)
-    return dense2_output[1]
+    x_val = copy(x)
+    for i in 1:length(model)
+        x_val = model[i].σ.(model[i].weight*x_val .+ model[i].bias)
+    end
+    return x_val[1]
 end
+
 
 function model_validation(model, lower_bound, upper_bound, d)
     x = rand(Uniform(lower_bound, upper_bound), d)

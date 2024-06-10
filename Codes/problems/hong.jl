@@ -12,7 +12,7 @@ function sample_x(params)
 end 
 
 function global_xi(seed,params)
-    Random.seed!(seed)
+    # Random.seed!(seed)
     if params[:case_type] == 0
         return rand(Normal(0, 1), params[:d], params[:m])
     else 
@@ -47,13 +47,13 @@ struct HongProblem
 end
 
 
-# function norm_opt(problem::HongProblem)
+# function norm_problem(problem::HongProblem)
 #     model = Model(Ipopt.Optimizer)
 #     set_silent(model)
-#     @variable(model, params[:lower_bound] <= x[1:params[:d] <= params[:upper_bound]])
+#     @variable(model, problem.params[:lower_bound] <= x[1:problem.params[:d]] <= problem.params[:upper_bound])
 #     @objective(model, Min, -sum(x))
-#     @operator(model, new_const, params[:d], (x...) -> neurconst(collect(x), trained_nn, params[:Y_max], params[:Y_min]))
-#     @constraint(model, new_const(x...) <= params[:epsilon])
+#     @operator(model, new_const, problem.params[:d], (x...) -> neurconst(collect(x), problem.trained_nn))
+#     @constraint(model, new_const(x...) <= problem.params[:epsilon])
 #     optimize!(model)
 #     if !is_solved_and_feasible(model; allow_almost = true)
 #         # @show termination_status(model)

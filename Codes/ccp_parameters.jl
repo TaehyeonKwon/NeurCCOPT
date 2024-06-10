@@ -14,8 +14,9 @@ function setup_parameters(indicator)
         params[:m] = 5
         params[:beta] = (1 - params[:alpha])^(1 / params[:m])
         params[:lower_bound] = 0.0
-        params[:upper_bound] = 10.0
-        params[:case_type] = 1
+        params[:upper_bound] = 5.0
+        params[:case_type] = 0
+
         # params[:quantile_value] = params[:case_type] == 0 ? Distributions.quantile(Chisq(params[:d]), params[:beta]) : Distributions.quantile(Chisq(params[:d]), 1 - params[:alpha])
     end
 
@@ -30,19 +31,6 @@ function setup_parameters(indicator)
         params[:q] = collect(range(0, stop=10, length=params[:d]))
         params[:r] = collect(range(0.02, stop=0.12, length=params[:d]))
     end
-    
-    # problem parameter for nonconvex.jl
-    if indicator == 3
-        # Params for Problem
-        params[:d] = 5
-        params[:alpha] = 0.1
-        params[:m] = 5
-        params[:beta] = (1 - params[:alpha])^(1 / params[:m])
-        params[:lower_bound] = 0.0
-        params[:upper_bound] = 99999999.0
-        params[:case_type] = 0
-        # params[:quantile_value] = params[:case_type] == 0 ? Distributions.quantile(Chisq(params[:d]), params[:beta]) : Distributions.quantile(Chisq(params[:d]), 1 - params[:alpha])
-    end
 
     # Params for Framework
     params[:N] = 1000
@@ -55,6 +43,7 @@ function setup_parameters(indicator)
 
     # Params for Neural Net Training
     params[:batch_size] = 16
+    params[:hidden_layer] = round(Int, params[:d] / 3)
     params[:epochs] = 30
     params[:learning_rate] = 0.01
     

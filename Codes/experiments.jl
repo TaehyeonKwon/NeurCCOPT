@@ -23,7 +23,7 @@ problems = Dict(
 )
 
 # Problem indicator
-indicator = 2
+indicator = 1
 problem_info = problems[indicator]
 fixed_params = setup_parameters(indicator)
 
