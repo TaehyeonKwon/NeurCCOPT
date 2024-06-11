@@ -2,7 +2,11 @@ module DataGeneration
 
 using Random, Distributions, LinearAlgebra
 
-export compute_quantile,SAA,create_dataset,split_dataset
+export compute_quantile,SAA,create_dataset,split_dataset, normalize_data, denormalize_data
+
+
+
+
 
 function compute_quantile(x, params, global_xi, cc_g)
     results = Float64[]
@@ -21,7 +25,7 @@ function SAA(x, params, global_xi, cc_g)
     for i in 1:params[:N_SAA]
         sample_xi = global_xi(params[:seed] + i, params)
         value = cc_g(x, sample_xi)
-        push!(results, value <= 0 ? value : 0)
+        push!(results, value <= 0 ? 1 : 0)
     end
     return mean(results)
 end

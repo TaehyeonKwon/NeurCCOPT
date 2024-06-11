@@ -15,7 +15,7 @@ end
 
 
 function global_xi(seed, params)
-    Random.seed!(Int(seed))
+    # Random.seed!(Int(seed))
     μ = collect(range(0.5, stop=2, length=params[:d]))
     σ = 0.5 .* μ
     corr = 0.2
@@ -36,12 +36,13 @@ function cc_g(x,sample_xi)
 end
 
 
-function neurconst(x::Vector, trained_nn)
+function neurconst(x::Vector, trained_nn,params)
     x_val = copy(x)
     for i in 1:length(trained_nn)
         x_val = trained_nn[i].σ.(trained_nn[i].weight * x_val .+ trained_nn[i].bias)
     end
-    return x_val[1]
+    y_nomalize = x_val[1] * (params[:Y_max]-params[:Y_min]) + params[:Y_min]
+    return y_nomalize
 end 
 
 struct CreditProblem
@@ -63,12 +64,12 @@ function credit_problem(problem::CreditProblem)
     for i in 1:problem.params[:d]
         @constraint(model, problem.params[:q][i] * x[i] <= 0.20*sum(problem.params[:q]))
     end
-    @operator(model, new_const, problem.params[:d], (x...) -> neurconst(collect(x),problem.trained_nn))
+    @operator(model, new_const, problem.params[:d], (x...) -> neurconst(collect(x),problem.trained_nn, problem.params))
     @constraint(model, new_const(x...) <= 0)
     optimize!(model)
     if !is_solved_and_feasible(model; allow_almost = true)
-        # @show(termination_status(opt_model))
-        # @warn("Unable to find a feasible and/or optimal solution of the embedded model")
+        @show(termination_status(opt_model))
+        @warn("Unable to find a feasible and/or optimal solution of the embedded model")
     end
     return value.(x), -objective_value(model)
 end

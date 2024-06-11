@@ -12,7 +12,7 @@ function sample_x(params)
 end 
 
 function global_xi(seed,params)
-    Random.seed!(Int(seed))
+    # Random.seed!(Int(seed))
     if params[:case_type] == 0
         return rand(Normal(0, 1), params[:d], params[:m])
     else 
@@ -28,13 +28,23 @@ function cc_g(x, sampled_xi)
     return maximum((dot(x.^2, sampled_xi[:, i].^2) - 100) for i in 1:size(sampled_xi, 2))
 end
 
-function neurconst(x::Vector, trained_nn)
+# function neurconst(x::Vector, trained_nn,params)
+#     x_val = copy(x)
+#     for i in 1:length(trained_nn)
+#         x_val = trained_nn[i].σ.(trained_nn[i].weight * x_val .+ trained_nn[i].bias)
+#     end
+#     y_nomalize = x_val[1] * (params[:Y_max]-params[:Y_min]) + params[:Y_min]
+#     return y_nomalize
+# end 
+
+function neurconst(x::Vector, trained_nn, params)
     x_val = copy(x)
     for i in 1:length(trained_nn)
-        x_val = trained_nn[i].σ.(trained_nn[i].weight * x_val .+ trained_nn[i].bias)
+        x_val = trained_nn[i](x_val)
     end
-    return x_val[1]
-end 
+    y_normalized = x_val[1] * (params[:Y_max] - params[:Y_min]) + params[:Y_min]
+    return y_normalized
+end
 
 
 struct HongProblem
@@ -68,13 +78,13 @@ function norm_problem(problem::HongProblem)
     set_silent(model)   
     @variable(model, problem.params[:lower_bound] <= x[1:problem.params[:d]] <= problem.params[:upper_bound]) 
     @objective(model, Min,0)
-    @operator(model, new_const, problem.params[:d], (x...) -> neurconst(collect(x), problem.trained_nn))
-    @constraint(model, new_const(x...)  <= problem.params[:epsilon])
+    @operator(model, new_const, problem.params[:d], (x...) -> neurconst(collect(x), problem.trained_nn, problem.params))
+    @constraint(model, new_const(x...) <= 0)
     @constraint(model, sum(x) >= (1*problem.params[:d]))
     optimize!(model)
     if !is_solved_and_feasible(model; allow_almost = true)
-       #  @show(termination_status(model))
-       #  @warn("Unable to find a feasible and/or optimal solution of the embedded model")
+        @show(termination_status(model))
+        @warn("Unable to find a feasible and/or optimal solution of the embedded model")
     end
     return value.(x), objective_value(model)
 end

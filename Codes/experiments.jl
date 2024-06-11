@@ -23,7 +23,7 @@ problems = Dict(
 )
 
 # Problem indicator
-indicator = 1
+indicator = 2
 problem_info = problems[indicator]
 fixed_params = setup_parameters(indicator)
 
@@ -41,7 +41,11 @@ combinations = product(values(param_ranges)...)
 function run_experiment(params,problem_info)   
     problem_constructor, sample_x_func, global_xi_func, cc_g_func, neurconst_func, opt_problem = problem_info
     X, Y = create_dataset(params, sample_x_func,global_xi_func, cc_g_func)
-    X_train, X_test, Y_train, Y_test = split_dataset(X, Y)
+    Y_normalized, Y_min, Y_max = normalize_data(Y)
+    params[:Y_min] = Y_min
+    params[:Y_max] = Y_max
+
+    X_train, X_test, Y_train, Y_test = split_dataset(X, Y_normalized)
     train_dataset = prepare_train_dataset(X_train, Y_train, params)
     nn_model = train_NN(train_dataset, params)
     problem_instance = problem_constructor(nn_model, params) 
@@ -59,6 +63,7 @@ for comb in combinations
     for (i, key) in enumerate(keys_list)
         current_params[key] = comb[i]
     end
+    println("current params: ",current_params)
     quantile_values, x_solutions, feasibility, optimal_value = run_experiment(current_params,problem_info)
     
     result_df = DataFrame()
