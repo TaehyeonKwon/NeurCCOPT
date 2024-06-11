@@ -1,0 +1,30 @@
+┌ Error: CUDA.jl could not find an appropriate CUDA runtime to use.
+│ 
+│ This can have several reasons:
+│ * you are using an unsupported platform: this version of CUDA.jl
+│   only supports Linux (x86_64, aarch64, ppc64le) and Windows (x86_64),
+│   while your platform was identified as x86_64-linux-gnu-libgfortran5-cxx11-libstdcxx29-cuda+none-julia_version+1.8.1;
+│ * you precompiled CUDA.jl in an environment where the CUDA driver
+│   was not available (i.e., a container, or an HPC login node).
+│   in that case, you need to specify which CUDA version to use
+│   by calling `CUDA.set_runtime_version!`;
+│ * you requested use of a local CUDA toolkit, but not all
+│   required components were discovered. try running with
+│   JULIA_DEBUG=all in your environment for more details.
+│ 
+│ For more details, refer to the CUDA.jl documentation at
+│ https://cuda.juliagpu.org/stable/installation/overview/
+└ @ CUDA ~/.julia/packages/CUDA/s5N6v/src/initialization.jl:82
+┌ Warning: Layer with Float32 parameters got Float64 input.
+│   The input will be converted, but any earlier layers may be very slow.
+│   layer = Dense(10 => 3, σ)   # 33 parameters
+│   summary(x) = "10×16 Matrix{Float64}"
+└ @ Flux ~/.julia/packages/Flux/n3cOc/src/layers/stateless.jl:60
+[ Info: Epoch: 5 , Loss: 0.1008378538406663
+[ Info: Epoch: 10 , Loss: 0.05404238756063643
+[ Info: Epoch: 15 , Loss: 0.05091716693554613
+[ Info: Epoch: 20 , Loss: 0.048955832872331476
+[ Info: Epoch: 25 , Loss: 0.04732285569496654
+[ Info: Epoch: 30 , Loss: 0.046003668273685294
+┌ Warning: Unable to find a feasible and/or optimal solution of the embedded model
+└ @ Main.Hong /storage/work/tzk5446/NeurCCOPT/Codes/problems/hong.jl:70

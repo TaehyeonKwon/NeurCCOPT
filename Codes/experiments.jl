@@ -23,15 +23,16 @@ problems = Dict(
 )
 
 # Problem indicator
-indicator = 2
+indicator = 1
 problem_info = problems[indicator]
 fixed_params = setup_parameters(indicator)
 
 param_ranges = Dict(
 #    :N => [100,1000],
-    :num_samples_x => [30, 100],
-    :K => [10, 30],
-    :theta => 0.8:0.1:0.9
+    :num_samples_x => [100],
+    :K => [50],
+    # :theta => 0.8:0.1:0.9
+    :theta => 0.9
 )
 
 
@@ -63,7 +64,6 @@ for comb in combinations
     for (i, key) in enumerate(keys_list)
         current_params[key] = comb[i]
     end
-    println("current params: ",current_params)
     quantile_values, x_solutions, feasibility, optimal_value = run_experiment(current_params,problem_info)
     
     result_df = DataFrame()

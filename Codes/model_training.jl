@@ -6,7 +6,7 @@ include("data_generation.jl")
 using Flux, Distributions
 using Flux.Data: DataLoader
 using Random, LinearAlgebra, Statistics
-using .DataGeneration: compute_quantile,SAA,create_dataset,split_dataset
+using .DataGeneration: compute_quantile,Sample_Average_Apporximation,create_dataset,split_dataset
 using Plots
 
 

@@ -1,0 +1,14 @@
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+=====================Starting combination 1=======================
+termination_status(model) = MathOptInterface.LOCALLY_INFEASIBLE
+feasi_quantile: 1.0
+Iteration 1: Feasible solution found, x* = [0.012575684284564593, 0.012575684284564593, 0.012575684284564593, 0.012575684284564593, 0.012575684284564593, 0.012575684284564593, 0.012575684284564593, 0.012575684284564593, 0.012575684284564593, 0.012575684284564593]. No retraining required.
+optimal value: -0.12575684284564595
+Train done! Result Saved!
+Experiments completed and results saved in 'results' folder.

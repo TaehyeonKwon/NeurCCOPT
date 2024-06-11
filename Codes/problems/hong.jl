@@ -62,12 +62,12 @@ end
 #     set_silent(model)
 #     @variable(model, problem.params[:lower_bound] <= x[1:problem.params[:d]] <= problem.params[:upper_bound])
 #     @objective(model, Min, -sum(x))
-#     @operator(model, new_const, problem.params[:d], (x...) -> neurconst(collect(x), problem.trained_nn))
-#     @constraint(model, new_const(x...) <= problem.params[:epsilon])
+#     @operator(model, new_const, problem.params[:d], (x...) -> neurconst(collect(x), problem.trained_nn, problem.params))
+#     @constraint(model, new_const(x...) <= 0)
 #     optimize!(model)
 #     if !is_solved_and_feasible(model; allow_almost = true)
-#         # @show termination_status(model)
-#         # @warn("Unable to find a feasible and/or optimal solution of the embedded model")
+#         @show termination_status(model)
+#         @warn("Unable to find a feasible and/or optimal solution of the embedded model")
 #     end
 #     return value.(x), objective_value(model)
 # end

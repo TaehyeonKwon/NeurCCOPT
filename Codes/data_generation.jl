@@ -2,7 +2,7 @@ module DataGeneration
 
 using Random, Distributions, LinearAlgebra
 
-export compute_quantile,SAA,create_dataset,split_dataset, normalize_data, denormalize_data
+export compute_quantile,Sample_Average_Apporximation,create_dataset,split_dataset, normalize_data, denormalize_data
 
 
 
@@ -20,7 +20,7 @@ function compute_quantile(x, params, global_xi, cc_g)
 end
 
 
-function SAA(x, params, global_xi, cc_g)
+function Sample_Average_Apporximation(x, params, global_xi, cc_g)
     results = Float64[]
     for i in 1:params[:N_SAA]
         sample_xi = global_xi(params[:seed] + i, params)

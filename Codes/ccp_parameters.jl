@@ -9,13 +9,13 @@ function setup_parameters(indicator)
     # problem parameter for hong.jl
     if indicator == 1
         # Params for Problem
-        params[:d] = 10
+        params[:d] = 5
         params[:epsilon] = 0.1 # original confidence level
-        params[:alpha] = 0.1 # confidence level for quantile
-        params[:delta] = 10^(-3) # confidence level for SAA
-        # params[:N_SAA] = log(1/params[:delta])/(2*(params[:alpha]-params[:epsilon])^2)
-        params[:N_SAA] = 10^6
-        params[:m] = 10
+        params[:alpha] = 0.11 # confidence level for quantile
+        params[:delta] = 10^(-1) # confidence level for SAA
+        params[:N_SAA] = log(1/params[:delta])/(2*(params[:alpha]-params[:epsilon])^2)*10^2
+        # params[:N_SAA] = 10^5
+        params[:m] = 5
         params[:beta] = (1 - params[:alpha])^(1 / params[:m])
         params[:lower_bound] = 0.0
         params[:upper_bound] = 10.0
@@ -29,10 +29,10 @@ function setup_parameters(indicator)
     if indicator ==2
         params[:d] = 50  # num of obilgor
         params[:epsilon] = 0.05
-        params[:alpha] = 0.05 # confidence level for quantile
+        params[:alpha] = 0.06 # confidence level for quantile
         params[:delta] = 10^(-3) # confidence level for sample
-        # params[:N_SAA] = log(1/params[:delta])/(2*(params[:alpha]-params[:epsilon])^2)*10^2
-        params[:N_SAA] = 10^6
+        params[:N_SAA] = log(1/params[:delta])/(2*(params[:alpha]-params[:epsilon])^2)
+        # params[:N_SAA] = 10^6
         params[:w] = 250 
         params[:lower_bound] = -2.0
         params[:upper_bound] = 2.0
@@ -41,7 +41,7 @@ function setup_parameters(indicator)
     end
 
     # Params for Framework
-    params[:N] = 10^6 # sample for quantile
+    params[:N] = 10^4 # sample for quantile
     params[:num_samples_x] = 100
     params[:seed] = 1
     params[:iterations] = 300

@@ -16,14 +16,15 @@ function iterative_retraining(problem_instance, model, X_train, Y_train, params,
         x_star_jump, optimal_value = opt_problem(problem_instance)
         # println("x_star: ",x_star_jump)
         # feasi_quantile = compute_quantile(x_star_jump, params, global_xi, cc_g) 
-        feasi_quantile = SAA(x_star_jump, params, global_xi_func, cc_g_func)
-        println("feasi_quantile: ",feasi_quantile)
+        quantile_value = compute_quantile(x_star_jump, params, global_xi_func, cc_g_func)
+        feasi_saa = Sample_Average_Apporximation(x_star_jump, params, global_xi_func, cc_g_func)
+        println("feasi_quantile: ",feasi_saa)
         # feasi_quantile = compute_quantile(x_star_jump, params, global_xi_func, cc_g_func)
         obj_value = optimal_value
-        push!(quantile_values, feasi_quantile)
+        push!(quantile_values, quantile_value)
         push!(solutions, x_star_jump)
-        push!(feasibility, feasi_quantile <= params[:epsilon])
-	if feasi_quantile > params[:epsilon]
+        push!(feasibility, feasi_saa >= 1-params[:epsilon])
+	    if feasi_saa < 1-params[:epsilon]
            #  println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
             for k in 1:params[:K]
                 bar_x = rand(Uniform(params[:lower_bound], params[:upper_bound]), params[:d])

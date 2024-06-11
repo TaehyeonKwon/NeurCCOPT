@@ -26,7 +26,7 @@ function global_xi(seed, params)
 
     η = MvNormal(μ, Σ)
     u = collect(range(1, stop=4, length=params[:d]))
-    ξ = exp.(rand(η) .- u)
+    ξ = exp.(rand(η)).- u
     return ξ
 end
 
@@ -68,7 +68,7 @@ function credit_problem(problem::CreditProblem)
     @constraint(model, new_const(x...) <= 0)
     optimize!(model)
     if !is_solved_and_feasible(model; allow_almost = true)
-        @show(termination_status(opt_model))
+        @show(termination_status(model))
         @warn("Unable to find a feasible and/or optimal solution of the embedded model")
     end
     return value.(x), -objective_value(model)
