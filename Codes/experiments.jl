@@ -42,11 +42,9 @@ combinations = product(values(param_ranges)...)
 function run_experiment(params,problem_info)   
     problem_constructor, sample_x_func, global_xi_func, cc_g_func, neurconst_func, opt_problem = problem_info
     X, Y = create_dataset(params, sample_x_func,global_xi_func, cc_g_func)
-    Y_normalized, Y_min, Y_max = normalize_data(Y)
-    params[:Y_min] = Y_min
-    params[:Y_max] = Y_max
+    X_scaled, Y_scaled = min_max_scaling(X, Y)
 
-    X_train, X_test, Y_train, Y_test = split_dataset(X, Y_normalized)
+    X_train, X_test, Y_train, Y_test = split_dataset(X_scaled, Y_scaled)
     train_dataset = prepare_train_dataset(X_train, Y_train, params)
     nn_model = train_NN(train_dataset, params)
     problem_instance = problem_constructor(nn_model, params) 
@@ -79,4 +77,6 @@ for comb in combinations
     println("Train done! Result Saved!")
 end
 
+# alpha set and obj_value set should be passed
+# plot_feasible_frontier(alpha, obj_value)
 println("Experiments completed and results saved in 'results' folder.")

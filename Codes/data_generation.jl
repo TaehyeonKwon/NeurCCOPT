@@ -2,10 +2,7 @@ module DataGeneration
 
 using Random, Distributions, LinearAlgebra
 
-export compute_quantile,Sample_Average_Apporximation,create_dataset,split_dataset, normalize_data, denormalize_data
-
-
-
+export compute_quantile,create_dataset,split_dataset, check_feasibility,min_max_scaling 
 
 
 function compute_quantile(x, params, global_xi, cc_g)
@@ -30,9 +27,6 @@ function Sample_Average_Apporximation(x, params, global_xi, cc_g)
     return mean(results)
 end
 
-
-
-
 function create_dataset(params, sample_x, global_xi, cc_g)
     X = sample_x(params)
     Y = [compute_quantile(x, params, global_xi, cc_g) for x in X]
@@ -47,18 +41,29 @@ function split_dataset(X, Y)
 end
 
 
-function normalize_data(Y)
-    Y_min = minimum(Y)
-    Y_max = maximum(Y)
-    Y_normalized = (Y .- Y_min) ./ (Y_max .- Y_min)
-
-    return Y_normalized, Y_min, Y_max
-end
 
 
-function denormalize_data(Y_normalized, Y_min, Y_max)
-    Y_denormalized = Y_normalized .* (Y_max .- Y_min) .+ Y_min
-    return Y_denormalized
+function min_max_scaling(X::Vector{Vector{Float64}}, Y::Vector{Float64})
+    n = length(X)
+    d = length(X[1])
+    X_scaled = deepcopy(X)  
+    Y_scaled = copy(Y)
+    for j in 1:d
+        min_val = minimum(x[j] for x in X)
+        max_val = maximum(x[j] for x in X)
+        
+        for i in 1:n
+            X_scaled[i][j] = (X[i][j] - min_val) / (max_val - min_val)
+        end
+    end
+    min_val_Y = minimum(Y)
+    max_val_Y = maximum(Y)
+    
+    for i in 1:n
+        Y_scaled[i] = (Y[i] - min_val_Y) / (max_val_Y - min_val_Y)
+    end
+    
+    return X_scaled, Y_scaled
 end
 
 

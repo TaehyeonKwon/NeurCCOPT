@@ -1,6 +1,6 @@
 module ResultPlot
 
-export plot_quantile_predictions
+export plot_quantile_predictions,plot_feasible_frontier
 
 using Plots
 using JuMP, Ipopt, Distributions, Flux
@@ -63,7 +63,7 @@ function plot_feasible_frontier(alpha::Vector{Float64}, obj_value::Vector{Float6
     plot!(alpha[sorted_indices], obj_value[sorted_indices], label="", color=:red, linewidth=2)
 end
 
-
+# Call this function
 plot_feasible_frontier(alpha, obj_value)
 
 end # module

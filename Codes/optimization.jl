@@ -14,12 +14,8 @@ function iterative_retraining(problem_instance, model, X_train, Y_train, params,
     for iteration in 1:params[:iterations]
         @assert model_validation(model, params[:lower_bound], params[:upper_bound], params[:d])
         x_star_jump, optimal_value = opt_problem(problem_instance)
-        # println("x_star: ",x_star_jump)
-        # feasi_quantile = compute_quantile(x_star_jump, params, global_xi, cc_g) 
         quantile_value = compute_quantile(x_star_jump, params, global_xi_func, cc_g_func)
-        # feasi_saa = Sample_Average_Apporximation(x_star_jump, params, global_xi_func, cc_g_func)
         is_feasible = check_feasibility(x_star_jump, params, cc_g_func, global_xi_func)
-        # feasi_quantile = compute_quantile(x_star_jump, params, global_xi_func, cc_g_func)
         obj_value = optimal_value
         push!(quantile_values, quantile_value)
         push!(solutions, x_star_jump)
