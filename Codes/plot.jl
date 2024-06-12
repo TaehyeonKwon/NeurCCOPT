@@ -35,4 +35,35 @@ function plot_quantile_predictions(X_test, Y_test, model, iteration)
     savefig(scatterplot, joinpath(savepath, "iteration_$iteration.png"))
 end
 
+
+function pareto_frontier(alpha::Vector{Float64}, obj_value::Vector{Float64})
+    n = length(alpha)
+    pareto_indices = []
+    for i in 1:n
+        dominated = false
+        for j in 1:n
+            if i != j && (alpha[j] <= alpha[i] && obj_value[j] <= obj_value[i]) && (alpha[j] < alpha[i] || obj_value[j] < obj_value[i])
+                dominated = true
+                break
+            end
+        end
+        if !dominated
+            push!(pareto_indices, i)
+        end
+    end
+    return pareto_indices
+end
+
+
+function plot_feasible_frontier(alpha::Vector{Float64}, obj_value::Vector{Float64})
+    pareto_indices = pareto_frontier(alpha, obj_value)
+    sorted_indices = sort(pareto_indices, by=i -> alpha[i])
+    scatter(alpha, obj_value, title="Feasible Frontier", xlabel="Alpha", ylabel="Objective Value", label="All Points", color=:blue)
+    scatter!(alpha[sorted_indices], obj_value[sorted_indices], label="Pareto Frontier", color=:red, marker=:star5)
+    plot!(alpha[sorted_indices], obj_value[sorted_indices], label="", color=:red, linewidth=2)
+end
+
+
+plot_feasible_frontier(alpha, obj_value)
+
 end # module

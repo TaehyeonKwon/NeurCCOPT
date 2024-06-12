@@ -17,13 +17,13 @@ function iterative_retraining(problem_instance, model, X_train, Y_train, params,
         # println("x_star: ",x_star_jump)
         # feasi_quantile = compute_quantile(x_star_jump, params, global_xi, cc_g) 
         quantile_value = compute_quantile(x_star_jump, params, global_xi_func, cc_g_func)
-        feasi_saa = Sample_Average_Apporximation(x_star_jump, params, global_xi_func, cc_g_func)
-        println("feasi_quantile: ",feasi_saa)
+        # feasi_saa = Sample_Average_Apporximation(x_star_jump, params, global_xi_func, cc_g_func)
+        is_feasible = check_feasibility(x_star_jump, params, cc_g_func, global_xi_func)
         # feasi_quantile = compute_quantile(x_star_jump, params, global_xi_func, cc_g_func)
         obj_value = optimal_value
         push!(quantile_values, quantile_value)
         push!(solutions, x_star_jump)
-        push!(feasibility, feasi_saa >= 1-params[:epsilon])
+        push!(feasibility, is_feasible)
 	    if feasi_saa < 1-params[:epsilon]
            #  println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
             for k in 1:params[:K]

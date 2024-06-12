@@ -43,15 +43,16 @@ function setup_parameters(indicator)
     params[:N] = 10^4 # sample for quantile
     params[:num_samples_x] = 100
     params[:seed] = 1
-    params[:iterations] = 300
+    params[:iterations] = 1000
     params[:K] = 30
-    params[:theta] = 0.9
+    params[:theta] = 0.9 # should be adjusted dynamically
 
+    # Don't change anymore 
     # Params for Neural Net Training
-    params[:batch_size] = 16
+    params[:batch_size] = 1
     params[:hidden_layer] = round(Int, params[:d] / 3)
-    params[:epochs] = 30
-    params[:learning_rate] = 0.01
+    params[:epochs] = 10^4
+    params[:learning_rate] = 10^(-5)
     
     return params
 end

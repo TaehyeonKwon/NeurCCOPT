@@ -62,4 +62,29 @@ function denormalize_data(Y_normalized, Y_min, Y_max)
 end
 
 
+function q_hat(x, cc_g, sample_xi,params)
+    sum = 0
+    for i in 1:params[:N_SAA]
+        sample_xi = global_xi(params[:seed] + i, params)
+        sum += cc_g(x, sample_xi)<= 0 ? 1 : 0
+    return sum / 1:params[:N_SAA]
+end
+
+
+function upper_confidence_bound(x, cc_g, sample_xi, alpha,params)
+    N = params[:N_SAA]
+    q_hat_value = q_hat(x, cc_g, sample_xi, params)
+    z_alpha = quantile(Normal(0, 1), 1 - alpha)
+    return q_hat_value + z_alpha * sqrt(q_hat_value * (1 - q_hat_value) / N)
+end
+
+function check_feasibility(x, cc_g, sample_xi, params)
+    U_beta_N_prime = upper_confidence_bound(x, cc_g, sample_xi, params[:alpha],params)
+    return U_beta_N_prime <= params[:epsilon]
+end
+
+
+
+
+
 end
