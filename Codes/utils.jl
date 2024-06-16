@@ -8,6 +8,7 @@ using Statistics
 using Plots
 using Flux
 using Flux.Data: DataLoader
+using QuasiMonteCarlo
 
 include("plot.jl")
 include("data_generation.jl")

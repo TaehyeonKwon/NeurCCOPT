@@ -23,7 +23,11 @@ function iterative_retraining(problem_instance, model, X_train, Y_train, params,
 	    if feasi_saa < 1-params[:epsilon]
            #  println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
             for k in 1:params[:K]
-                bar_x = rand(Uniform(params[:lower_bound], params[:upper_bound]), params[:d])
+                lb = fill(params[:lower_bound], params[:d])
+                ub = fill(params[:upper_bound], params[:d])
+                # bar_x = rand(Uniform(params[:lower_bound], params[:upper_bound]), params[:d])
+                samples = QuasiMonteCarlo.sample(1, lb, ub, SobolSample())
+                bar_x = samples[:, 1]
                 x_k = params[:theta] * x_star_jump + (1 - params[:theta]) * bar_x
                 push!(X_train, x_k)
                 y_k = compute_quantile(x_k, params, global_xi_func, cc_g_func)
