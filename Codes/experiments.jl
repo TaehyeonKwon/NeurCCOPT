@@ -54,7 +54,7 @@ function run_experiment(params,problem_info)
     initial_nn_model = train_NN(initial_train_dataset, params)
     # Generate problem instance for iterative learning
     problem_instance = problem_constructor(initial_nn_model, params) 
-    quantile_values, solutions, feasibility, optimal_value = iterative_retraining(problem_instance, nn_model, X_train_original, Y_train_original, params, opt_problem, global_xi_func, cc_g_func)    
+    quantile_values, solutions, feasibility, optimal_value = iterative_retraining(problem_instance, initial_nn_model, X_train_original, Y_train_original, params, opt_problem, global_xi_func, cc_g_func)    
     return quantile_values, solutions, feasibility, optimal_value
 end
 

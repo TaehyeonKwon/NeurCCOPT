@@ -51,7 +51,7 @@ function setup_parameters(indicator)
     # Params for Neural Net Training
     params[:batch_size] = 1
     params[:hidden_layer] = round(Int, params[:d] / 3)
-    params[:epochs] = 10^3
+    params[:epochs] = 10
     params[:learning_rate] = 10^(-5)
     
     return params

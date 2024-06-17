@@ -2,7 +2,7 @@ module DataGeneration
 
 using Random, Distributions, LinearAlgebra
 
-export compute_quantile,create_dataset,split_dataset,check_feasibility,min_max_scaling,denormalize
+export compute_quantile,create_dataset,split_dataset,check_feasibility,min_max_scaling,denormalize,U_alpha_N_prime
 
 function compute_quantile(x, params, global_xi, cc_g)
     results = Float64[]
@@ -46,15 +46,22 @@ function min_max_scaling(X::Vector{Vector{Float64}}, Y::Vector{Float64},params)
     X_scaled = deepcopy(X)  
     Y_scaled = copy(Y)
 
+    params[:min_vals] = Float64[]
+    params[:max_vals] = Float64[]
+
     for j in 1:d
         min_val = minimum(x[j] for x in X)
         max_val = maximum(x[j] for x in X)
+        push!(params[:min_vals], min_val)
+        push!(params[:max_vals], max_val)
         for i in 1:n
             X_scaled[i][j] = (X[i][j] - min_val) / (max_val - min_val)
         end
     end
     min_val_Y = minimum(Y)
     max_val_Y = maximum(Y)
+    params[:min_val_Y] = min_val_Y
+    params[:max_val_Y] = max_val_Y
     
     for i in 1:n
         Y_scaled[i] = (Y[i] - min_val_Y) / (max_val_Y - min_val_Y)
@@ -90,13 +97,13 @@ end
 
 
 
-function q_hat(x, cc_g, sample_xi,params)
+function q_hat(x, cc_g, global_xi ,params)
     sum = 0
     for i in 1:params[:N_SAA]
-        sample_xi = global_xi(params[:seed] + i, params)
-        sum += cc_g(x, sample_xi)<= 0 ? 1 : 0
+        sampled_xi = global_xi(params[:seed] + i, params)
+        sum += cc_g(x, sampled_xi)<= 0 ? 1 : 0
     end
-    return sum / 1:params[:N_SAA]
+    return sum / params[:N_SAA]
 end
 
 
@@ -107,9 +114,14 @@ function upper_confidence_bound(x, cc_g, sample_xi, alpha,params)
     return q_hat_value + z_alpha * sqrt(q_hat_value * (1 - q_hat_value) / N)
 end
 
-function check_feasibility(x, cc_g, sample_xi, params)
-    U_beta_N_prime = upper_confidence_bound(x, cc_g, sample_xi, params[:alpha],params)
-    return U_beta_N_prime <= params[:epsilon]
+
+function check_feasibility(x, params, cc_g, sample_xi)
+    U_alpha_N_prime = upper_confidence_bound(x, cc_g, sample_xi, params[:alpha],params)
+    return U_alpha_N_prime <= params[:epsilon]
+end
+
+function U_alpha_N_prime(x, cc_g, sample_xi, params)
+    return upper_confidence_bound(x, cc_g, sample_xi, params[:alpha],params)
 end
 
 end

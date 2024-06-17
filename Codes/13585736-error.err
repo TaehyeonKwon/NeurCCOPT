@@ -1,0 +1,18 @@
+┌ Warning: Layer with Float32 parameters got Float64 input.
+│   The input will be converted, but any earlier layers may be very slow.
+│   layer = Dense(5 => 2, σ)    # 12 parameters
+│   summary(x) = "5×1 Matrix{Float64}"
+└ @ Flux ~/.julia/packages/Flux/n3cOc/src/layers/stateless.jl:60
+[ Info: Epoch: 5 , Loss: 0.38749626313323454
+[ Info: Epoch: 10 , Loss: 0.38749626313323454
+ERROR: LoadError: MethodError: no method matching min_max_scaling(::Vector{Vector{Float64}}, ::Vector{Float64})
+Closest candidates are:
+  min_max_scaling(::Vector{Vector{Float64}}, ::Vector{Float64}, !Matched::Any) at /storage/work/tzk5446/NeurCCOPT/Codes/data_generation.jl:43
+Stacktrace:
+ [1] iterative_retraining(problem_instance::HongProblem, model::Chain{Tuple{Dense{typeof(σ), Matrix{Float32}, Vector{Float32}}, Dense{typeof(relu), Matrix{Float32}, Vector{Float32}}}}, X_train_original::Vector{Vector{Float64}}, Y_train_original::Vector{Float64}, params::Dict{Any, Any}, opt_problem::typeof(norm_problem), global_xi_func::Function, cc_g_func::Function)
+   @ Main.Optimization /storage/work/tzk5446/NeurCCOPT/Codes/optimization.jl:38
+ [2] run_experiment(params::Dict{Any, Any}, problem_info::Tuple{DataType, typeof(Main.Hong.sample_x), typeof(Main.Hong.global_xi), typeof(Main.Hong.cc_g), typeof(Main.Hong.neurconst), typeof(norm_problem)})
+   @ Main /storage/work/tzk5446/NeurCCOPT/Codes/experiments.jl:57
+ [3] top-level scope
+   @ /storage/work/tzk5446/NeurCCOPT/Codes/experiments.jl:71
+in expression starting at /storage/work/tzk5446/NeurCCOPT/Codes/experiments.jl:62

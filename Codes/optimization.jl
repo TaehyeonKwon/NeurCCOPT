@@ -22,7 +22,7 @@ function iterative_retraining(problem_instance, model, X_train_original, Y_train
         push!(solutions, x_star_jump)
         push!(feasibility, is_feasible)
 	    
-        if feasi_saa < 1-params[:epsilon]
+        if !is_feasible
            #  println("Iteration $iteration: Infeasible solution found, x* = $x_star_jump")
             for k in 1:params[:K]
                 lb = fill(params[:lower_bound], params[:d])
@@ -35,7 +35,7 @@ function iterative_retraining(problem_instance, model, X_train_original, Y_train
                 y_k = compute_quantile(x_k, params, global_xi_func, cc_g_func)
                 push!(Y_train_original, y_k)
             end
-            X_normalized, Y_normalized = min_max_scaling(X_train_original, Y_train_original)
+            X_normalized, Y_normalized = min_max_scaling(X_train_original, Y_train_original,params)
             train_dataset = DataLoader((hcat(X_normalized...), hcat(Y_normalized...)), batchsize = params[:batch_size], shuffle = true)           
             model = train_NN(train_dataset, params)
         else

@@ -50,7 +50,7 @@ function neurconst(x::Vector, trained_nn, params)
     max_val_Y = params[:max_val_Y]
     denormalized_x_val = x_val * (max_val_Y - min_val_Y) .+ min_val_Y
     
-    return denormalized_x_val
+    return denormalized_x_val[1]
 end
 
 
