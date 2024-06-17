@@ -2,8 +2,7 @@ module DataGeneration
 
 using Random, Distributions, LinearAlgebra
 
-export compute_quantile,create_dataset,split_dataset, check_feasibility,min_max_scaling 
-
+export compute_quantile,create_dataset,split_dataset,check_feasibility,min_max_scaling 
 
 function compute_quantile(x, params, global_xi, cc_g)
     results = Float64[]
@@ -17,7 +16,7 @@ function compute_quantile(x, params, global_xi, cc_g)
 end
 
 
-function Sample_Average_Apporximation(x, params, global_xi, cc_g)
+function Sample_Average_Approximation(x, params, global_xi, cc_g)
     results = Float64[]
     for i in 1:params[:N_SAA]
         sample_xi = global_xi(params[:seed] + i, params)
@@ -51,7 +50,6 @@ function min_max_scaling(X::Vector{Vector{Float64}}, Y::Vector{Float64})
     for j in 1:d
         min_val = minimum(x[j] for x in X)
         max_val = maximum(x[j] for x in X)
-        
         for i in 1:n
             X_scaled[i][j] = (X[i][j] - min_val) / (max_val - min_val)
         end
@@ -72,6 +70,7 @@ function q_hat(x, cc_g, sample_xi,params)
     for i in 1:params[:N_SAA]
         sample_xi = global_xi(params[:seed] + i, params)
         sum += cc_g(x, sample_xi)<= 0 ? 1 : 0
+    end
     return sum / 1:params[:N_SAA]
 end
 
@@ -87,9 +86,5 @@ function check_feasibility(x, cc_g, sample_xi, params)
     U_beta_N_prime = upper_confidence_bound(x, cc_g, sample_xi, params[:alpha],params)
     return U_beta_N_prime <= params[:epsilon]
 end
-
-
-
-
 
 end

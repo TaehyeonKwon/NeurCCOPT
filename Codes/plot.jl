@@ -64,6 +64,6 @@ function plot_feasible_frontier(alpha::Vector{Float64}, obj_value::Vector{Float6
 end
 
 # Call this function
-plot_feasible_frontier(alpha, obj_value)
+# plot_feasible_frontier(alpha, obj_value)
 
 end # module
