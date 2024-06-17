@@ -4,8 +4,8 @@
 #SBATCH --mem=8GB
 #SBATCH --time=48:00:00
 #SBATCH --job-name=neurccopt
-#SBATCH --output=result-%j.out
-#SBATCH --error=error-%j.err
+#SBATCH --output=%j-result.out
+#SBATCH --error=%j-error.err
 #SBATCH --account=azs7266_sc
 #SBATCH --partition=sla-prio
 

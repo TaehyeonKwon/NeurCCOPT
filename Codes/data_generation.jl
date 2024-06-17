@@ -2,7 +2,7 @@ module DataGeneration
 
 using Random, Distributions, LinearAlgebra
 
-export compute_quantile,create_dataset,split_dataset,check_feasibility,min_max_scaling 
+export compute_quantile,create_dataset,split_dataset,check_feasibility,min_max_scaling,denormalize
 
 function compute_quantile(x, params, global_xi, cc_g)
     results = Float64[]
@@ -40,13 +40,12 @@ function split_dataset(X, Y)
 end
 
 
-
-
-function min_max_scaling(X::Vector{Vector{Float64}}, Y::Vector{Float64})
+function min_max_scaling(X::Vector{Vector{Float64}}, Y::Vector{Float64},params)
     n = length(X)
     d = length(X[1])
     X_scaled = deepcopy(X)  
     Y_scaled = copy(Y)
+
     for j in 1:d
         min_val = minimum(x[j] for x in X)
         max_val = maximum(x[j] for x in X)
@@ -63,6 +62,32 @@ function min_max_scaling(X::Vector{Vector{Float64}}, Y::Vector{Float64})
     
     return X_scaled, Y_scaled
 end
+
+
+function denormalize(X_scaled::Vector{Vector{Float64}}, Y_scaled::Vector{Float64}, params)
+    n = length(X_scaled)
+    d = length(X_scaled[1])
+    X = deepcopy(X_scaled)
+    Y = copy(Y_scaled)
+    
+    for j in 1:d
+        min_val = params[:min_vals][j]
+        max_val = params[:max_vals][j]
+        for i in 1:n
+            X[i][j] = X_scaled[i][j] * (max_val - min_val) + min_val
+        end
+    end
+    
+    min_val_Y = params[:min_val_Y]
+    max_val_Y = params[:max_val_Y]
+    
+    for i in 1:n
+        Y[i] = Y_scaled[i] * (max_val_Y - min_val_Y) + min_val_Y
+    end
+    
+    return X, Y
+end
+
 
 
 function q_hat(x, cc_g, sample_xi,params)

@@ -38,12 +38,19 @@ end
 # end 
 
 function neurconst(x::Vector, trained_nn, params)
-    x_val = copy(x)
+    min_vals = params[:min_vals]
+    max_vals = params[:max_vals]
+    scaled_x = [(x[i] - min_vals[i]) / (max_vals[i] - min_vals[i]) for i in 1:length(x)]
+
+    x_val = copy(scaled_x)
     for i in 1:length(trained_nn)
         x_val = trained_nn[i](x_val)
     end
-    y_normalized = x_val[1] * (params[:Y_max] - params[:Y_min]) + params[:Y_min]
-    return y_normalized
+    min_val_Y = params[:min_val_Y]
+    max_val_Y = params[:max_val_Y]
+    denormalized_x_val = x_val * (max_val_Y - min_val_Y) .+ min_val_Y
+    
+    return denormalized_x_val
 end
 
 
