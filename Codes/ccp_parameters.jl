@@ -57,5 +57,3 @@ function setup_parameters(indicator)
     return params
 end
 end
-
-# Can you see this change?
